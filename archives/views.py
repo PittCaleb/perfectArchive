@@ -9,36 +9,46 @@ from django.db.models import Count, Avg, Q, Sum, F
 from collections import defaultdict
 
 
-# Home page view
-def index(request):
+def _calculate_game_outcomes(game):
     """
-    Fetches data for the homepage, including the most recent game and top champions.
+    Helper function to determine advancing players and winners for a given game.
+    This avoids duplicating logic across multiple views.
     """
-    # Fetch the most recent game, prefetching players to avoid extra queries
-    latest_game = Game.objects.prefetch_related('players').order_by('-id').first()
+    players = list(game.players.all())
+    if not players:
+        return [], []
 
-    if latest_game:
-        # We need to calculate advancement and winner status for the template
-        players = list(latest_game.players.all())
-        for p in players:
-            p.round_total = p.round1_score + p.round2_score + p.round3_score + p.round4_score
+    for p in players:
+        p.round_total = p.round1_score + p.round2_score + p.round3_score + p.round4_score
 
-        players.sort(key=lambda p: p.round_total, reverse=True)
+    players.sort(key=lambda p: p.round_total, reverse=True)
 
-        advancing_ids = []
-        if len(players) > 0 and players[0].round_total >= 0:
-            advancing_ids.append(players[0].id)
+    # Determine advancing players from round 1-4
+    advancing_ids = []
+    if len(players) > 0 and players[0].round_total >= 0:
+        advancing_ids.append(players[0].id)
 
-        tiebreaker_winner = next((p for p in players if p.won_tiebreaker), None)
-        if tiebreaker_winner:
-            if tiebreaker_winner.id not in advancing_ids:
-                advancing_ids.append(tiebreaker_winner.id)
-        elif len(players) > 1 and players[1].round_total >= 0:
-            if players[1].id not in advancing_ids:
-                advancing_ids.append(players[1].id)
+    tiebreaker_winner = next((p for p in players if p.won_tiebreaker), None)
+    if tiebreaker_winner:
+        if tiebreaker_winner.id not in advancing_ids:
+            advancing_ids.append(tiebreaker_winner.id)
+    elif len(players) > 1 and players[1].round_total >= 0:
+        if players[1].id not in advancing_ids:
+            advancing_ids.append(players[1].id)
 
+    # Determine the final winner(s)
+    winner_ids = []
+    advancing_players = [p for p in players if p.id in advancing_ids]
+
+    # Check for a fast line tie-breaker first
+    if game.fast_line_tiebreaker_winner_podium is not None:
+        winner_player = next(
+            (p for p in advancing_players if p.podium_number == game.fast_line_tiebreaker_winner_podium), None)
+        if winner_player:
+            winner_ids.append(winner_player.id)
+    else:
+        # If no tie-breaker, determine winner by highest score
         max_fast_line_total = -1
-        advancing_players = [p for p in players if p.id in advancing_ids]
         for p in advancing_players:
             p.fast_line_total = p.round_total + (p.fast_line_score or 0)
             if p.fast_line_total > max_fast_line_total:
@@ -46,18 +56,24 @@ def index(request):
 
         if max_fast_line_total >= 0:
             winner_ids = [p.id for p in advancing_players if p.fast_line_total == max_fast_line_total]
-        else:
-            winner_ids = []
 
-        # Attach the calculated properties to the players on the latest_game object
+    return advancing_ids, winner_ids
+
+
+# Home page view
+def index(request):
+    latest_game = Game.objects.prefetch_related('players').order_by('-air_date', '-episode_number').first()
+    if latest_game:
+        advancing_ids, winner_ids = _calculate_game_outcomes(latest_game)
         for p in latest_game.players.all():
             p.is_advancing = p.id in advancing_ids
             p.is_winner = p.id in winner_ids
+            # Add calculated fields for template display
             p.round_total_score = p.round1_score + p.round2_score + p.round3_score + p.round4_score
             p.fast_line_total_score = p.round_total_score + (p.fast_line_score or 0)
 
-    # Fetch top 3 champions based on total winnings
-    top_champions = Player.objects.select_related('game').order_by('-total_winnings')[:3]
+    top_champions = Player.objects.filter(total_winnings__gt=1000).select_related('game').order_by('-total_winnings')[
+                    :3]
 
     context = {
         'latest_game': latest_game,
@@ -78,38 +94,7 @@ def recent_games_view(request):
     game_list = Game.objects.prefetch_related('players').order_by('-air_date', '-episode_number')
 
     for game in game_list:
-        players = list(game.players.all())
-
-        for p in players:
-            p.round_total = p.round1_score + p.round2_score + p.round3_score + p.round4_score
-
-        players.sort(key=lambda p: p.round_total, reverse=True)
-
-        advancing_ids = []
-        if len(players) > 0 and players[0].round_total >= 0:
-            advancing_ids.append(players[0].id)
-
-        tiebreaker_winner = next((p for p in players if p.won_tiebreaker), None)
-        if tiebreaker_winner:
-            if tiebreaker_winner.id not in advancing_ids:
-                advancing_ids.append(tiebreaker_winner.id)
-        elif len(players) > 1 and players[1].round_total >= 0:
-            if players[1].id not in advancing_ids:
-                advancing_ids.append(players[1].id)
-
-        max_fast_line_total = -1
-
-        advancing_players = [p for p in players if p.id in advancing_ids]
-        for p in advancing_players:
-            p.fast_line_total = p.round_total + (p.fast_line_score or 0)
-            if p.fast_line_total > max_fast_line_total:
-                max_fast_line_total = p.fast_line_total
-
-        if max_fast_line_total >= 0:
-            winner_ids = [p.id for p in advancing_players if p.fast_line_total == max_fast_line_total]
-        else:
-            winner_ids = []
-
+        advancing_ids, winner_ids = _calculate_game_outcomes(game)
         for p in game.players.all():
             p.is_advancing = p.id in advancing_ids
             p.is_winner = p.id in winner_ids
@@ -146,42 +131,39 @@ def statistics_view(request):
     latest_game = Game.objects.order_by('-id').first()
 
     # --- Podium Performance Logic ---
-    podium_stats = []
-    total_players_by_podium = Player.objects.values('podium_number').annotate(total=Count('id'))
-    total_map = {item['podium_number']: item['total'] for item in total_players_by_podium}
+    podium_stats_query = Player.objects.values('podium_number').annotate(
+        total_players=Count('id'),
+        r1_correct=Count('id', filter=Q(round1_correct=True)),
+        r2_correct=Count('id', filter=Q(round2_correct=True)),
+        r3_correct=Count('id', filter=Q(round3_correct=True)),
+        r4_correct=Count('id', filter=Q(round4_correct=True))
+    ).order_by('podium_number')
 
+    podium_stats = []
     for i in range(1, 5):
-        total_players = total_map.get(i, 0)
-        if total_players == 0:
-            podium_stats.append({
-                'podium': i, 'round1_pct': 0, 'round2_pct': 0, 'round3_pct': 0, 'round4_pct': 0, 'avg_correct': 0
-            })
+        data = next((item for item in podium_stats_query if item['podium_number'] == i), None)
+        if not data or data['total_players'] == 0:
+            podium_stats.append(
+                {'podium': i, 'round1_pct': 0, 'round2_pct': 0, 'round3_pct': 0, 'round4_pct': 0, 'avg_correct': 0})
             continue
 
-        stats = Player.objects.filter(podium_number=i).aggregate(
-            r1_correct=Count('id', filter=Q(round1_correct=True)),
-            r2_correct=Count('id', filter=Q(round2_correct=True)),
-            r3_correct=Count('id', filter=Q(round3_correct=True)),
-            r4_correct=Count('id', filter=Q(round4_correct=True)),
-        )
-
-        total_correct = stats['r1_correct'] + stats['r2_correct'] + stats['r3_correct'] + stats['r4_correct']
+        total_players = data['total_players']
+        total_correct = data['r1_correct'] + data['r2_correct'] + data['r3_correct'] + data['r4_correct']
         avg_correct = (total_correct / total_players) if total_players > 0 else 0
 
         podium_stats.append({
             'podium': i,
-            'round1_pct': (stats['r1_correct'] / total_players) * 100,
-            'round2_pct': (stats['r2_correct'] / total_players) * 100,
-            'round3_pct': (stats['r3_correct'] / total_players) * 100,
-            'round4_pct': (stats['r4_correct'] / total_players) * 100,
+            'round1_pct': (data['r1_correct'] / total_players) * 100,
+            'round2_pct': (data['r2_correct'] / total_players) * 100,
+            'round3_pct': (data['r3_correct'] / total_players) * 100,
+            'round4_pct': (data['r4_correct'] / total_players) * 100,
             'avg_correct': avg_correct
         })
 
-    if podium_stats and any(s['avg_correct'] > 0 for s in podium_stats):
+    if podium_stats:
         keys_to_color = ['round1_pct', 'round2_pct', 'round3_pct', 'round4_pct', 'avg_correct']
         for key in keys_to_color:
             values = [s[key] for s in podium_stats]
-            if not values: continue
             min_val, max_val = min(values), max(values)
             if min_val == max_val:
                 for stat in podium_stats: stat[key + '_color'] = 'yellow'
@@ -193,34 +175,13 @@ def statistics_view(request):
                     stat[key + '_color'] = 'red'
                 else:
                     stat[key + '_color'] = 'yellow'
-    else:
-        for stat in podium_stats:
-            for key in ['round1_pct', 'round2_pct', 'round3_pct', 'round4_pct', 'avg_correct']:
-                stat[key + '_color'] = 'gray'
 
     # --- Advancement Stats Logic ---
     advancement_stats_raw = {i: {'total': 0, 'advanced': 0, 'won': 0} for i in range(1, 5)}
     all_games = Game.objects.prefetch_related('players').all()
 
     for game in all_games:
-        players = list(game.players.all())
-        if not players: continue
-        for p in players: p.round_total = p.round1_score + p.round2_score + p.round3_score + p.round4_score
-        players.sort(key=lambda p: p.round_total, reverse=True)
-        advancing_ids = []
-        if len(players) > 0 and players[0].round_total >= 0: advancing_ids.append(players[0].id)
-        tiebreaker_winner = next((p for p in players if p.won_tiebreaker), None)
-        if tiebreaker_winner:
-            if tiebreaker_winner.id not in advancing_ids: advancing_ids.append(tiebreaker_winner.id)
-        elif len(players) > 1 and players[1].round_total >= 0:
-            if players[1].id not in advancing_ids: advancing_ids.append(players[1].id)
-        max_fast_line_total = -1
-        advancing_players = [p for p in players if p.id in advancing_ids]
-        for p in advancing_players:
-            p.fast_line_total = p.round_total + (p.fast_line_score or 0)
-            if p.fast_line_total > max_fast_line_total: max_fast_line_total = p.fast_line_total
-        winner_ids = [p.id for p in advancing_players if
-                      p.fast_line_total == max_fast_line_total] if max_fast_line_total >= 0 else []
+        advancing_ids, winner_ids = _calculate_game_outcomes(game)
         for p in game.players.all():
             podium = p.podium_number
             advancement_stats_raw[podium]['total'] += 1
@@ -229,9 +190,7 @@ def statistics_view(request):
 
     avg_scores_by_podium = Player.objects.annotate(
         round_total=F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score')
-    ).values('podium_number').annotate(
-        avg_score=Avg('round_total')
-    )
+    ).values('podium_number').annotate(avg_score=Avg('round_total'))
     avg_score_map = {item['podium_number']: item['avg_score'] for item in avg_scores_by_podium}
 
     advancement_stats = []
@@ -247,7 +206,6 @@ def statistics_view(request):
     if advancement_stats:
         for key in ['avg_score', 'advanced_pct', 'won_pct']:
             values = [s[key] for s in advancement_stats]
-            if not values: continue
             min_val, max_val = min(values), max(values)
             if min_val == max_val:
                 for stat in advancement_stats: stat[key + '_color'] = 'yellow'
@@ -275,8 +233,8 @@ def statistics_view(request):
         '-fast_line_correct_count', 'fast_line_incorrect_count')[:5]
     top_fast_line_scores = Player.objects.annotate(
         round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))).annotate(
-        fast_line_total=F('round_total') + F('fast_line_score')).filter(fast_line_score__isnull=False).select_related(
-        'game').order_by('-fast_line_total')[:10]
+        fast_line_total=F('round_total') + (F('fast_line_score') or 0)).filter(
+        fast_line_score__isnull=False).select_related('game').order_by('-fast_line_total')[:10]
     leaderboard_data = Player.objects.select_related('game').order_by('-total_winnings')[:10]
 
     # --- Final Round Performance Logic ---
@@ -337,8 +295,13 @@ def game_entry_api(request):
             data = json.loads(request.body)
             from django.db import transaction
             with transaction.atomic():
-                game = Game.objects.create(submitted_by=request.user, episode_title=data.get('episodeTitle'),
-                                           air_date=data.get('airDate'), episode_number=data.get('episodeNumber'))
+                game = Game.objects.create(
+                    submitted_by=request.user,
+                    episode_title=data.get('episodeTitle'),
+                    air_date=data.get('airDate'),
+                    episode_number=data.get('episodeNumber'),
+                    fast_line_tiebreaker_winner_podium=data.get('fastLineTiebreakerWinnerId')
+                )
                 for player_data in data.get('players', []):
                     scores = player_data.get('scores', {})
                     Player.objects.create(
@@ -349,7 +312,7 @@ def game_entry_api(request):
                         round4_correct=player_data.get('round4Correct'),
                         round1_score=scores.get('round1Score', 0), round2_score=scores.get('round2Score', 0),
                         round3_score=scores.get('round3Score', 0), round4_score=scores.get('round4Score', 0),
-                        won_tiebreaker=(data.get('tiebreakerWinnerId') == player_data.get('podium')),
+                        won_tiebreaker=(data.get('roundTiebreakerWinnerId') == player_data.get('podium')),
                         fast_line_correct_count=player_data.get('fastLineCorrect'),
                         fast_line_incorrect_count=player_data.get('fastLineIncorrect'),
                         fast_line_score=scores.get('fastLineScore'),
