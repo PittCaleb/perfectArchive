@@ -55,9 +55,9 @@
                     <input type="text" readonly class="w-full mt-4 rounded-md p-2 score-input bg-gray-700 border border-gray-600 text-gray-300 text-lg text-center font-bold" placeholder="$0">
                 </div>
 
-                 <!-- Tie Breaker -->
-                <div class="tie-breaker mt-6 hidden">
-                    <h3 class="section-title text-sm border-yellow-500 text-yellow-400 font-semibold uppercase tracking-wider border-b pb-2 mb-4">TIE-BREAKER</h3>
+                 <!-- Round Tie Breaker -->
+                <div class="round-tie-breaker mt-6 hidden">
+                    <h3 class="section-title text-sm border-yellow-500 text-yellow-400 font-semibold uppercase tracking-wider border-b pb-2 mb-4">ROUND TIE-BREAKER</h3>
                     <button class="w-full py-2 rounded-md font-bold text-gray-800 bg-yellow-400 hover:bg-yellow-500 tie-breaker-advance">Select Winner</button>
                 </div>
 
@@ -73,6 +73,12 @@
                         <!-- Incorrect buttons 0-15 generated here -->
                     </div>
                     <input type="text" readonly class="w-full mt-4 rounded-md p-2 fast-line-score score-input bg-gray-700 border border-gray-600 text-gray-300 text-lg text-center font-bold" placeholder="$0">
+                </div>
+
+                <!-- Fast Line Tie Breaker -->
+                <div class="fast-line-tie-breaker mt-6 hidden">
+                    <h3 class="section-title text-sm border-orange-500 text-orange-400 font-semibold uppercase tracking-wider border-b pb-2 mb-4">FAST LINE TIE-BREAKER</h3>
+                    <button class="w-full py-2 rounded-md font-bold text-gray-800 bg-orange-400 hover:bg-orange-500 fast-line-tie-breaker-advance">Select Winner</button>
                 </div>
 
                 <!-- Final Round -->
@@ -137,8 +143,9 @@
         const FAST_LINE_VALUE = 500;
         const FINAL_ROUND_CONSOLATION = 1000;
 
-        let tiebreakerWinnerId = null;
-        let playerScores = []; // Will hold detailed scores for submission
+        let roundTiebreakerWinnerId = null;
+        let fastLineTiebreakerWinnerId = null;
+        let playerScores = [];
 
         let players = Array.from({ length: 4 }, (_, i) => ({
             id: i + 1,
@@ -149,20 +156,14 @@
             finalRoundCorrect: -1,
         }));
 
-        // --- INITIALIZATION ---
         function initialize() {
-            // Create player cards from template
             for (let i = 1; i <= 4; i++) {
-                let playerHtml = template.replaceAll('{playerId}', i);
-                scorecard.insertAdjacentHTML('beforeend', playerHtml);
+                scorecard.insertAdjacentHTML('beforeend', template.replaceAll('{playerId}', i));
             }
-
-            // Populate choice buttons for each player
             document.querySelectorAll('.player-card').forEach(card => {
                 const fastLineCorrectContainer = card.querySelector('.fast-line-correct');
                 const fastLineIncorrectContainer = card.querySelector('.fast-line-incorrect');
                 const finalRoundContainer = card.querySelector('.final-round-correct');
-
                 for (let i = 0; i <= 15; i++) {
                     const btnCorrect = document.createElement('button');
                     btnCorrect.className = 'w-7 h-7 rounded-full text-xs font-bold choice-btn';
@@ -170,7 +171,6 @@
                     btnCorrect.dataset.value = i;
                     btnCorrect.dataset.type = 'fast-line-correct';
                     fastLineCorrectContainer.appendChild(btnCorrect);
-
                     const btnIncorrect = document.createElement('button');
                     btnIncorrect.className = 'w-7 h-7 rounded-full text-xs font-bold choice-btn choice-btn-red';
                     btnIncorrect.textContent = i;
@@ -187,28 +187,27 @@
                     finalRoundContainer.appendChild(btn);
                 }
             });
-
             document.getElementById('airDate').valueAsDate = new Date();
             addEventListeners();
             updateAllScores();
         }
 
-        // --- EVENT LISTENERS ---
         function addEventListeners() {
-            scorecard.addEventListener('input', (e) => {
+            scorecard.addEventListener('input', e => {
                 if (e.target.classList.contains('player-name')) {
                     const playerId = e.target.closest('.player-card').dataset.playerId;
                     players[playerId - 1].name = e.target.value;
                 }
             });
 
-            scorecard.addEventListener('click', (e) => {
+            scorecard.addEventListener('click', e => {
                 const card = e.target.closest('.player-card');
                 if (!card) return;
                 const playerId = parseInt(card.dataset.playerId);
 
                 if (e.target.classList.contains('round-toggle')) {
-                    tiebreakerWinnerId = null;
+                    roundTiebreakerWinnerId = null;
+                    fastLineTiebreakerWinnerId = null;
                     e.target.classList.toggle('correct');
                     const round = parseInt(e.target.dataset.round);
                     players[playerId - 1].rounds[round - 1] = e.target.classList.contains('correct');
@@ -216,18 +215,23 @@
                 }
 
                 if (e.target.classList.contains('tie-breaker-advance')) {
-                    tiebreakerWinnerId = playerId;
+                    roundTiebreakerWinnerId = playerId;
+                    fastLineTiebreakerWinnerId = null;
+                    updateAllScores();
+                }
+
+                if (e.target.classList.contains('fast-line-tie-breaker-advance')) {
+                    fastLineTiebreakerWinnerId = playerId;
                     updateAllScores();
                 }
 
                 if (e.target.classList.contains('choice-btn')) {
+                    fastLineTiebreakerWinnerId = null;
                     const type = e.target.dataset.type;
                     const value = parseInt(e.target.dataset.value);
-
                     if (type === 'fast-line-correct') players[playerId - 1].fastLineCorrect = value;
                     if (type === 'fast-line-incorrect') players[playerId - 1].fastLineIncorrect = value;
                     if (type === 'final-round-correct') players[playerId - 1].finalRoundCorrect = value;
-
                     e.target.parentElement.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
                     e.target.classList.add('selected');
                     updateAllScores();
@@ -237,156 +241,118 @@
             document.getElementById('submitBtn').addEventListener('click', handleSubmit);
         }
 
-        // --- SCORING LOGIC & UI UPDATES ---
         function updateAllScores() {
-            // 1. Initialize scores object
-            playerScores = [];
-            players.forEach(p => {
-                playerScores[p.id - 1] = {
-                    round1: 0, round2: 0, round3: 0, round4: 0, roundTotal: 0,
-                    fastLine: 0, fastLineScore: 0, total: 0, final: 0
-                };
-            });
+            playerScores = Array.from({ length: 4 }, () => ({
+                round1: 0, round2: 0, round3: 0, round4: 0, roundTotal: 0,
+                fastLine: 0, fastLineScore: 0, total: 0, final: 0
+            }));
 
-            // 2. Calculate individual round scores
             for (let i = 0; i < 4; i++) {
                 const correctPlayers = players.filter(p => p.rounds[i]);
                 const numCorrect = correctPlayers.length;
                 const roundValue = numCorrect > 0 ? ROUND_VALUES[i] / numCorrect : 0;
-                const roundKey = `round${i + 1}`;
                 players.forEach(p => {
-                    if (p.rounds[i]) playerScores[p.id - 1][roundKey] = roundValue;
+                    if (p.rounds[i]) playerScores[p.id - 1][`round${i + 1}`] = roundValue;
                 });
             }
 
-            // 3. Calculate round totals
-            playerScores.forEach((score) => {
-                score.roundTotal = score.round1 + score.round2 + score.round3 + score.round4;
-            });
+            playerScores.forEach(s => s.roundTotal = s.round1 + s.round2 + s.round3 + s.round4);
 
-            // 4. Determine advancing players and handle ties
             const roundTotals = playerScores.map((s, i) => ({ score: s.roundTotal, id: i + 1 }));
             roundTotals.sort((a, b) => b.score - a.score);
 
-            document.querySelectorAll('.tie-breaker').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.round-tie-breaker').forEach(el => el.classList.add('hidden'));
+
             const score1 = roundTotals[0]?.score ?? -1;
             const score2 = roundTotals[1]?.score ?? -1;
             const score3 = roundTotals[2]?.score ?? -1;
-            const isTieForSecond = score1 > score2 && score2 === score3 && score2 > 0;
+            const isRoundTieForSecond = score1 > score2 && score2 === score3 && score2 > 0;
 
             let advancingIds = [];
             if (score1 > 0) advancingIds.push(roundTotals[0].id);
 
-            if (isTieForSecond) {
+            if (isRoundTieForSecond) {
                 const tiedPlayerIds = roundTotals.filter(p => p.score === score2).map(p => p.id);
-                tiedPlayerIds.forEach(id => {
-                    document.querySelector(`.player-card[data-player-id="${id}"] .tie-breaker`).classList.remove('hidden');
-                });
-                if (tiebreakerWinnerId && tiedPlayerIds.includes(tiebreakerWinnerId)) {
-                    advancingIds.push(tiebreakerWinnerId);
+                tiedPlayerIds.forEach(id => document.querySelector(`.player-card[data-player-id="${id}"] .round-tie-breaker`).classList.remove('hidden'));
+                if (roundTiebreakerWinnerId && tiedPlayerIds.includes(roundTiebreakerWinnerId)) {
+                    advancingIds.push(roundTiebreakerWinnerId);
                 }
             } else {
                 if (score2 > 0) advancingIds.push(roundTotals[1].id);
-                if (!isTieForSecond) tiebreakerWinnerId = null;
+                if (!isRoundTieForSecond) roundTiebreakerWinnerId = null;
             }
 
-            // 5. Calculate Fast Line and Total Scores for everyone (for data purposes)
-            playerScores.forEach((score, i) => {
+            playerScores.forEach((s, i) => {
                 if (players[i].fastLineCorrect > -1) {
-                    score.fastLine = players[i].fastLineCorrect * FAST_LINE_VALUE;
-                    score.fastLineScore = score.fastLine;
+                    s.fastLine = players[i].fastLineCorrect * FAST_LINE_VALUE;
+                    s.fastLineScore = s.fastLine;
                 }
-                score.total = score.roundTotal + score.fastLine;
+                s.total = s.roundTotal + s.fastLine;
             });
 
-            // 6. Determine the game winner(s) from the advancing players
+            document.querySelectorAll('.fast-line-tie-breaker').forEach(el => el.classList.add('hidden'));
+
             let gameWinnerIds = [];
-            let maxFastLineTotal = -1;
-
-            advancingIds.forEach(id => {
-                const playerScore = playerScores[id - 1].total;
-                if (playerScore > maxFastLineTotal) {
-                    maxFastLineTotal = playerScore;
+            if (advancingIds.length === 2) {
+                const playerA = playerScores[advancingIds[0] - 1];
+                const playerB = playerScores[advancingIds[1] - 1];
+                if (playerA.total === playerB.total && playerA.total > 0) {
+                     advancingIds.forEach(id => document.querySelector(`.player-card[data-player-id="${id}"] .fast-line-tie-breaker`).classList.remove('hidden'));
+                     if (fastLineTiebreakerWinnerId) {
+                         gameWinnerIds.push(fastLineTiebreakerWinnerId);
+                     }
+                } else {
+                    fastLineTiebreakerWinnerId = null;
+                    if (playerA.total > playerB.total) gameWinnerIds.push(advancingIds[0]);
+                    else if (playerB.total > playerA.total) gameWinnerIds.push(advancingIds[1]);
                 }
-            });
-
-            if (maxFastLineTotal >= 0) { // Allow for a score of 0 to win
-                advancingIds.forEach(id => {
-                    if (playerScores[id - 1].total === maxFastLineTotal) {
-                        gameWinnerIds.push(id);
-                    }
-                });
+            } else if (advancingIds.length === 1) {
+                gameWinnerIds.push(advancingIds[0]);
             }
 
-            // 7. Calculate Final Scores based on the new rules
-            playerScores.forEach((score, i) => {
-                const player = players[i];
-                const isWinner = gameWinnerIds.includes(player.id);
-
-                if (isWinner) {
-                    if (player.finalRoundCorrect > -1) {
-                        score.final = player.finalRoundCorrect === 5 ? score.total : FINAL_ROUND_CONSOLATION;
-                    } else {
-                        score.final = score.total; // Carry over if not played
-                    }
+            playerScores.forEach((s, i) => {
+                const p = players[i];
+                if (gameWinnerIds.includes(p.id)) {
+                    if (p.finalRoundCorrect > -1) s.final = p.finalRoundCorrect === 5 ? s.total : FINAL_ROUND_CONSOLATION;
+                    else s.final = s.total;
+                } else if (fastLineTiebreakerWinnerId && advancingIds.includes(p.id)) {
+                    s.final = 0; // The loser of the fast line tie-breaker gets 0
+                } else if (advancingIds.includes(p.id) && gameWinnerIds.length > 0) {
+                     s.final = s.total; // Non-winner in fast line keeps their score
                 } else {
-                    score.final = 0; // Not the winner, final score is 0
+                    s.final = 0; // Not advancing, final is 0
                 }
             });
 
-            // 8. Update UI with visibility rules
-            document.querySelectorAll('.player-card').forEach(card => {
-                card.classList.toggle('advances', advancingIds.includes(parseInt(card.dataset.playerId)));
-            });
+            document.querySelectorAll('.player-card').forEach(card => card.classList.toggle('advances', advancingIds.includes(parseInt(card.dataset.playerId))));
 
             const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
-            playerScores.forEach((scores, i) => {
+            playerScores.forEach((s, i) => {
                 const card = document.querySelector(`.player-card[data-player-id="${i + 1}"]`);
-                const playerId = i + 1;
-
-                card.querySelector('.score-input').value = formatter.format(scores.roundTotal);
-
-                const fastLineInput = card.querySelector('.fast-line-score');
-                if (advancingIds.includes(playerId)) {
-                    fastLineInput.value = formatter.format(scores.total);
-                } else {
-                    fastLineInput.value = formatter.format(0);
-                }
-
-                card.querySelector('.final-score').value = formatter.format(scores.final);
+                card.querySelector('.score-input').value = formatter.format(s.roundTotal);
+                card.querySelector('.fast-line-score').value = advancingIds.includes(i + 1) ? formatter.format(s.total) : formatter.format(0);
+                card.querySelector('.final-score').value = formatter.format(s.final);
             });
         }
 
-        // --- FORM RESET ---
         function resetForm() {
-            // Reset state variables
-            tiebreakerWinnerId = null;
+            roundTiebreakerWinnerId = null;
+            fastLineTiebreakerWinnerId = null;
             players = Array.from({ length: 4 }, (_, i) => ({
-                id: i + 1,
-                name: '',
-                rounds: [false, false, false, false],
-                fastLineCorrect: -1,
-                fastLineIncorrect: -1,
-                finalRoundCorrect: -1,
+                id: i + 1, name: '', rounds: [false, false, false, false],
+                fastLineCorrect: -1, fastLineIncorrect: -1, finalRoundCorrect: -1,
             }));
-
-            // Reset top-level form elements
             document.getElementById('episodeTitle').value = '';
             document.getElementById('airDate').valueAsDate = new Date();
             document.querySelector('input[name="episodeNumber"][value="1"]').checked = true;
-
-            // Reset each player card in the UI
             document.querySelectorAll('.player-card').forEach(card => {
                 card.querySelector('.player-name').value = '';
                 card.querySelectorAll('.round-toggle.correct').forEach(btn => btn.classList.remove('correct'));
                 card.querySelectorAll('.choice-btn.selected').forEach(btn => btn.classList.remove('selected'));
             });
-
-            // Recalculate and update the UI to show all zeros
             updateAllScores();
         }
 
-        // --- SUBMISSION ---
         async function handleSubmit() {
             const submitBtn = document.getElementById('submitBtn');
             const submitMessage = document.getElementById('submitMessage');
@@ -413,55 +379,40 @@
                 episodeTitle: episodeTitle,
                 airDate: airDate,
                 episodeNumber: parseInt(episodeNumber),
-                tiebreakerWinnerId: tiebreakerWinnerId || null,
+                roundTiebreakerWinnerId: roundTiebreakerWinnerId || null,
+                fastLineTiebreakerWinnerId: fastLineTiebreakerWinnerId || null,
                 players: players.map((p, i) => {
-                   const scores = playerScores[i];
+                   const s = playerScores[i];
                    return {
-                       podium: p.id,
-                       name: p.name,
-                       round1Correct: p.rounds[0],
-                       round2Correct: p.rounds[1],
-                       round3Correct: p.rounds[2],
-                       round4Correct: p.rounds[3],
+                       podium: p.id, name: p.name,
+                       round1Correct: p.rounds[0], round2Correct: p.rounds[1], round3Correct: p.rounds[2], round4Correct: p.rounds[3],
                        fastLineCorrect: p.fastLineCorrect === -1 ? null : p.fastLineCorrect,
                        fastLineIncorrect: p.fastLineIncorrect === -1 ? null : p.fastLineIncorrect,
                        finalRoundCorrect: p.finalRoundCorrect === -1 ? null : p.finalRoundCorrect,
                        scores: {
-                           round1Score: Math.round(scores.round1),
-                           round2Score: Math.round(scores.round2),
-                           round3Score: Math.round(scores.round3),
-                           round4Score: Math.round(scores.round4),
-                           fastLineScore: Math.round(scores.fastLineScore),
-                           finalTotal: Math.round(scores.final)
+                           round1Score: Math.round(s.round1), round2Score: Math.round(s.round2),
+                           round3Score: Math.round(s.round3), round4Score: Math.round(s.round4),
+                           fastLineScore: Math.round(s.fastLineScore), finalTotal: Math.round(s.final)
                        }
                    }
                 })
             };
 
-            console.log("Submitting this JSON payload:", JSON.stringify(gameData, null, 2));
-
             try {
-                // You will need a way to get the CSRF token if not using a Django form
                 const response = await fetch('{% url "game_entry_api" %}', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Add CSRF token header if needed. For simplicity in this context, view is csrf_exempt
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(gameData),
                 });
-
                 if (response.ok) {
                     submitMessage.textContent = 'Success! Data submitted. Resetting form...';
                     submitMessage.className = 'text-green-400 mt-2 h-6';
-
                     setTimeout(() => {
                         resetForm();
-                        submitMessage.textContent = ''; // Clear the message
-                        submitBtn.disabled = false; // Re-enable the button
-                        submitBtn.textContent = 'Submit Game Results'; // Reset button text
+                        submitMessage.textContent = '';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit Game Results';
                     }, 2000);
-
                 } else {
                     const errorData = await response.json();
                     throw new Error(errorData.message || `Server responded with status: ${response.status}`);
@@ -479,3 +430,4 @@
     });
 </script>
 {% endblock %}
+

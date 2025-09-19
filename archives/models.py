@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, Group, Permission, BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
 
 
@@ -41,7 +41,6 @@ class CustomUser(AbstractUser):
         SCOREKEEPER = 'SCOREKEEPER', 'Scorekeeper'
         ADMIN = 'ADMIN', 'Admin'
 
-    # We don't need a username, email is our unique identifier
     username = None
     email = models.EmailField('email address', unique=True)
     base_role = Role.BASIC
@@ -72,6 +71,9 @@ class Game(models.Model):
         related_name='submitted_games'
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
+    # This new field will store the podium number of the fast line tie-breaker winner
+    fast_line_tiebreaker_winner_podium = models.IntegerField(null=True, blank=True)
+
 
     def __str__(self):
         return f"{self.air_date} - {self.episode_title or f'Episode {self.episode_number}'}"
@@ -96,10 +98,10 @@ class Player(models.Model):
     round4_correct = models.BooleanField(null=True)
 
     # Round Scores
-    round1_score = models.IntegerField(null=False, blank=False, default=0)
-    round2_score = models.IntegerField(null=False, blank=False, default=0)
-    round3_score = models.IntegerField(null=False, blank=False, default=0)
-    round4_score = models.IntegerField(null=False, blank=False, default=0)
+    round1_score = models.IntegerField(default=0)
+    round2_score = models.IntegerField(default=0)
+    round3_score = models.IntegerField(default=0)
+    round4_score = models.IntegerField(default=0)
 
     # Tiebreaker
     won_tiebreaker = models.BooleanField(default=False)
@@ -107,13 +109,13 @@ class Player(models.Model):
     # Fast Line
     fast_line_correct_count = models.IntegerField(null=True, blank=True)
     fast_line_incorrect_count = models.IntegerField(null=True, blank=True)
-    fast_line_score = models.IntegerField(null=True, blank=False, default=None)
+    fast_line_score = models.IntegerField(null=True, blank=True)
 
     # Final Round
     final_round_correct_count = models.IntegerField(null=True, blank=True)
 
     # Final Winnings
-    total_winnings = models.IntegerField(null=False, blank=False, default=0)
+    total_winnings = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.name} in game on {self.game.air_date}"
@@ -136,3 +138,4 @@ class Syndication(models.Model):
 
     class Meta:
         ordering = ['state', 'city']
+
