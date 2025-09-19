@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistics - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4">
+    <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Game Statistics</h1>
+        <p class="text-md md:text-lg text-gray-400 mt-2">A deep dive into game performance metrics.</p>
+    </header>
+
+    {% if latest_game %}
+    <div class="text-center text-yellow-400 font-semibold mb-10 -mt-6">
+        <p>Through Game #{{ latest_game.id }} on {{ latest_game.air_date|date:"F j, Y" }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Section 1: Podium Performance -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Podium Performance</h2>
+        <p class="text-gray-400 mb-6">
+            This table shows the percentage of correct answers and the average number of correct answers after four rounds, broken down by the podium position a player started from.
+        </p>
+        <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+            <div class="grid grid-cols-6 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700">
+                <div class="px-6 py-4">Podium</div>
+                <div class="px-6 py-4 text-center">Round 1</div>
+                <div class="px-6 py-4 text-center">Round 2</div>
+                <div class="px-6 py-4 text-center">Round 3</div>
+                <div class="px-6 py-4 text-center">Round 4</div>
+                <div class="px-6 py-4 text-center">Avg Correct</div>
+            </div>
+            <div class="divide-y divide-gray-700">
+                {% for stat in podium_stats %}
+                <div class="grid grid-cols-6 items-center">
+                    <div class="px-6 py-4"><span class="font-bold text-lg text-white">Podium {{ stat.podium }}</span></div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round1_pct_color }}-400">{{ stat.round1_pct|floatformat:1 }}%</div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round2_pct_color }}-400">{{ stat.round2_pct|floatformat:1 }}%</div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round3_pct_color }}-400">{{ stat.round3_pct|floatformat:1 }}%</div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round4_pct_color }}-400">{{ stat.round4_pct|floatformat:1 }}%</div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.avg_correct_color }}-400">{{ stat.avg_correct|floatformat:1 }}</div>
+                </div>
+                {% empty %}
+                <div class="p-6 text-center text-gray-500"><p>No game data available to generate statistics.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Advancement -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Advancement</h2>
+        <p class="text-gray-400 mb-6">
+            Analysis of how often a player from each podium advanced to the next stage or won the game, and their average round score.
+        </p>
+        <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+            <div class="grid grid-cols-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700">
+                <div class="px-6 py-4">Podium</div>
+                <div class="px-6 py-4 text-center">Avg. Score</div>
+                <div class="px-6 py-4 text-center">Advanced to Fast Line</div>
+                <div class="px-6 py-4 text-center">Won Game</div>
+            </div>
+            <div class="divide-y divide-gray-700">
+                {% for stat in advancement_stats %}
+                <div class="grid grid-cols-4 items-center">
+                    <div class="px-6 py-4"><span class="font-bold text-lg text-white">Podium {{ stat.podium }}</span></div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.avg_score_color }}-400">${{ stat.avg_score|floatformat:0 }}</div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.advanced_pct_color }}-400">
+                        {{ stat.advanced_pct|floatformat:1 }}%
+                        <span class="text-xs text-gray-500">({{ stat.advanced_count }})</span>
+                    </div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.won_pct_color }}-400">
+                        {{ stat.won_pct|floatformat:1 }}%
+                        <span class="text-xs text-gray-500">({{ stat.won_count }})</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-6 text-center text-gray-500"><p>No game data available to generate statistics.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Fast Line Performance -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Fast Line Performance</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                <h3 class="font-semibold text-white mb-4">Distribution of Answers</h3>
+                <canvas id="fastLineChart"></canvas>
+            </div>
+            <div class="space-y-6">
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                    <h3 class="font-semibold text-white mb-3 text-center">Averages</h3>
+                    <div class="flex justify-around text-center">
+                        <div>
+                            <p class="text-sm text-gray-400">Correct</p>
+                            <p class="font-bold text-2xl text-green-400">{{ avg_stats.avg_correct|floatformat:2 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">Incorrect</p>
+                            <p class="font-bold text-2xl text-red-400">{{ avg_stats.avg_incorrect|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                    <h3 class="font-semibold text-white mb-4">Top 5 Performers (Correct)</h3>
+                    <ul class="space-y-3">
+                        {% for player in top_fast_line_players %}
+                        <li class="flex justify-between items-center">
+                            <span class="text-white">{{ player.name }}</span>
+                            <span class="font-mono text-green-400">{{ player.fast_line_correct_count }} <span class="text-gray-500">/</span> <span class="text-red-400">{{ player.fast_line_incorrect_count }}</span></span>
+                        </li>
+                        {% empty %}
+                        <li class="text-gray-500">No data available.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Final Round Performance -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Final Round Performance</h2>
+        <p class="text-gray-400 mb-6">
+            The percentage distribution for the number of questions answered correctly in the final round.
+        </p>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+            {% for stat in final_round_stats %}
+            <div class="p-4 rounded-xl shadow-lg border {% if stat.correct_count == 5 %}border-green-700 bg-green-900/50{% else %}border-blue-700 bg-blue-900/50{% endif %}">
+                <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
+                <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
+            </div>
+            {% empty %}
+            <div class="col-span-full p-6 text-center text-gray-500 bg-gray-800 rounded-xl">
+                <p>No final round data available to generate statistics.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Section: Leaderboards -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Leaderboards</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Top After Fast Line Scores -->
+            <div>
+                <h3 class="font-semibold text-white mb-4">Top 10 After Fast Line</h3>
+                 <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+                    <div class="divide-y divide-gray-700">
+                        {% for player in top_fast_line_scores %}
+                        <div class="grid grid-cols-8 p-4 items-center">
+                            <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
+                            <div class="col-span-4">
+                                <span class="font-medium text-white">{{ player.name }}</span>
+                                <span class="block text-xs text-gray-500">Game #{{ player.game.id }} on {{ player.game.air_date|date:"M j, Y" }}</span>
+                            </div>
+                            <div class="col-span-3 text-right font-mono text-lg text-yellow-400">${{ player.fast_line_total|floatformat:0 }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="p-6 text-center text-gray-500"><p>No data available.</p></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- Top Winnings -->
+            <div>
+                <h3 class="font-semibold text-white mb-4">Top 10 All-Time Winnings</h3>
+                <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+                    <div class="divide-y divide-gray-700">
+                        {% for player in leaderboard_data %}
+                        <div class="grid grid-cols-8 p-4 items-center">
+                            <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
+                            <div class="col-span-4">
+                                <span class="font-medium text-white">{{ player.name }}</span>
+                                <span class="block text-xs text-gray-500">Game #{{ player.game.id }} on {{ player.game.air_date|date:"M j, Y" }}</span>
+                            </div>
+                            <div class="col-span-3 text-right font-mono text-lg text-green-400">${{ player.total_winnings|floatformat:0 }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="p-6 text-center text-gray-500"><p>No player data available.</p></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('fastLineChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [
+                    {
+                        label: '# of Correct Answers',
+                        data: {{ correct_data|safe }},
+                        borderColor: 'rgb(74, 222, 128)', // green-400
+                        backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                        tension: 0.3,
+                        fill: true,
+                    },
+                    {
+                        label: '# of Incorrect Answers',
+                        data: {{ incorrect_data|safe }},
+                        borderColor: 'rgb(248, 113, 113)', // red-400
+                        backgroundColor: 'rgba(248, 113, 113, 0.2)',
+                        tension: 0.3,
+                        fill: true,
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#9ca3af', // gray-400
+                            stepSize: 1
+                        },
+                        grid: { color: '#374151' } // gray-700
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#d1d5db' // gray-300
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
+

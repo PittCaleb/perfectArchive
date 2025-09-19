@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Recent Games - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Recent Games</h1>
+        <p class="text-md md:text-lg text-gray-400 mt-2">A look at the most recently played games.</p>
+    </header>
+
+    <div class="space-y-8">
+        {% for game in page_obj %}
+        <div class="bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-700">
+            <!-- Game Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-700">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">{{ game.episode_title }}</h2>
+                    <p class="text-sm text-gray-400">
+                        {{ game.air_date|date:"F j, Y" }} (Ep {{ game.episode_number }})
+                    </p>
+                </div>
+                <div class="mt-2 sm:mt-0">
+                    <span class="text-lg font-semibold bg-gray-700 text-gray-300 px-4 py-1 rounded-full">
+                        #{{ game.id }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Players List -->
+            <div class="space-y-5">
+                {% for player in game.players.all %}
+                <div class="grid grid-cols-12 gap-4 items-center">
+                    <!-- Player Name -->
+                    <div class="col-span-12 sm:col-span-3">
+                        <p class="font-bold text-lg truncate">{{ player.name }}</p>
+                        <p class="text-xs text-gray-500">Podium {{ player.podium_number }}</p>
+                    </div>
+
+                    <!-- Rounds 1-4 -->
+                    <div class="col-span-12 sm:col-span-9">
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <!-- Round markers -->
+                            <div class="flex items-center space-x-2">
+                                <span class="h-5 w-5 rounded-full {% if player.round1_correct %}bg-green-500{% else %}bg-red-500{% endif %} border-2 border-gray-600"></span>
+                                <span class="h-5 w-5 rounded-full {% if player.round2_correct %}bg-green-500{% else %}bg-red-500{% endif %} border-2 border-gray-600"></span>
+                                <span class="h-5 w-5 rounded-full {% if player.round3_correct %}bg-green-500{% else %}bg-red-500{% endif %} border-2 border-gray-600"></span>
+                                <span class="h-5 w-5 rounded-full {% if player.round4_correct %}bg-green-500{% else %}bg-red-500{% endif %} border-2 border-gray-600"></span>
+                            </div>
+                            <!-- Round score -->
+                            <div class="font-mono text-gray-400 text-lg">
+                                ${{ player.round_total_score|floatformat:0 }}
+                            </div>
+
+                            <!-- Fast Line (only for advancing players) -->
+                            {% if player.is_advancing %}
+                            <div class="flex items-center space-x-2 border-l-2 border-gray-600 pl-4">
+                                <div class="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
+                                    {{ player.fast_line_correct_count|default:"0" }}
+                                </div>
+                                <div class="bg-red-600 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
+                                    {{ player.fast_line_incorrect_count|default:"0" }}
+                                </div>
+                                <div class="font-mono text-white text-lg font-semibold">
+                                    &rarr; ${{ player.fast_line_total_score|floatformat:0 }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                             <!-- Final Round (only for the winner) -->
+                            {% if player.is_winner %}
+                            <div class="flex items-center space-x-2 border-l-2 border-yellow-500 pl-4">
+                                {% if player.final_round_correct_count == 5 %}
+                                    <div class="bg-green-500 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ring-2 ring-green-400">5</div>
+                                    <div class="bg-green-500 text-white font-bold rounded-lg px-3 py-1 text-lg">${{ player.total_winnings|floatformat:0 }}</div>
+                                {% else %}
+                                     <div class="bg-red-500 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ring-2 ring-red-400">{{ player.final_round_correct_count|default:"0" }}</div>
+                                     <div class="bg-green-800 text-green-200 font-bold rounded-lg px-3 py-1 text-lg">${{ player.total_winnings|floatformat:0 }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-16">
+            <p class="text-gray-400">No games have been entered into the archive yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-between items-center mt-12">
+        <div>
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    &larr; Newer Games
+                </a>
+            {% endif %}
+        </div>
+        <div class="text-sm text-gray-400">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </div>
+        <div>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    Older Games &rarr;
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
