@@ -1,0 +1,15 @@
+services:
+  web:
+    build:
+      context: .
+    # This is the correct, top-level placement for the platform key
+    platform: linux/amd64
+    container_name: perfectarchive-web
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: python manage.py runserver 0.0.0.0:8000
+
