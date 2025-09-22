@@ -11,34 +11,53 @@
 
     {% if latest_game %}
     <div class="text-center text-yellow-400 font-semibold mb-10 -mt-6">
-        <p>Through Game #{{ latest_game.id }} on {{ latest_game.air_date|date:"F j, Y" }}</p>
+        <p>Through Game #{{ latest_game.id }} of {{ latest_game.air_date|date:"F j, Y" }}</p>
     </div>
     {% endif %}
 
+    <div class="text-center text-sm text-gray-400 mb-12 py-4 border-y border-gray-700">
+        Quick links to:
+        <a href="#podium-performance" class="font-semibold text-yellow-400 hover:underline px-2">Preliminary Rounds</a> |
+        <a href="#fast-line-performance" class="font-semibold text-yellow-400 hover:underline px-2">Fast Line</a> |
+        <a href="#final-round-performance" class="font-semibold text-yellow-400 hover:underline px-2">Final Round</a>
+    </div>
+
     <!-- Section 1: Podium Performance -->
     <section class="mb-12">
-        <h2 class="text-2xl font-bold text-white mb-4">Podium Performance</h2>
+        <h2 class="text-2xl font-bold text-white mb-4" id="podium-performance">Podium Performance</h2>
         <p class="text-gray-400 mb-6">
             This table shows the percentage of correct answers and the average number of correct answers after four rounds, broken down by the podium position a player started from.
         </p>
         <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
-            <div class="grid grid-cols-6 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700">
-                <div class="px-6 py-4">Podium</div>
-                <div class="px-6 py-4 text-center">Round 1</div>
-                <div class="px-6 py-4 text-center">Round 2</div>
-                <div class="px-6 py-4 text-center">Round 3</div>
-                <div class="px-6 py-4 text-center">Round 4</div>
-                <div class="px-6 py-4 text-center">Avg Correct</div>
+            <div class="grid grid-cols-6 text-center text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wider border-b border-gray-600 bg-gray-700/50">
+                <div class="px-4 py-3 text-left">
+                    <span class="hidden md:inline">Podium</span>
+                </div>
+                <div class="px-4 py-3">
+                    <span class="md:hidden">Rd 1</span><span class="hidden md:inline">Round 1</span>
+                </div>
+                <div class="px-4 py-3">
+                    <span class="md:hidden">Rd 2</span><span class="hidden md:inline">Round 2</span>
+                </div>
+                <div class="px-4 py-3">
+                    <span class="md:hidden">Rd 3</span><span class="hidden md:inline">Round 3</span>
+                </div>
+                <div class="px-4 py-3">
+                    <span class="md:hidden">Rd 4</span><span class="hidden md:inline">Round 4</span>
+                </div>
+                <div class="px-4 py-3">
+                    <span class="md:hidden">Avg</span><span class="hidden md:inline">Avg Correct</span>
+                </div>
             </div>
             <div class="divide-y divide-gray-700">
                 {% for stat in podium_stats %}
                 <div class="grid grid-cols-6 items-center">
-                    <div class="px-6 py-4"><span class="font-bold text-lg text-white">Podium {{ stat.podium }}</span></div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round1_pct_color }}-400">{{ stat.round1_pct|floatformat:1 }}%</div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round2_pct_color }}-400">{{ stat.round2_pct|floatformat:1 }}%</div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round3_pct_color }}-400">{{ stat.round3_pct|floatformat:1 }}%</div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.round4_pct_color }}-400">{{ stat.round4_pct|floatformat:1 }}%</div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.avg_correct_color }}-400">{{ stat.avg_correct|floatformat:1 }}</div>
+                    <div class="px-2 md:px-6 py-4"><span class="font-bold text-xs md:text-lg text-white">Podium {{ stat.podium }}</span></div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.round1_pct_color }}-400">{{ stat.round1_pct|floatformat:1 }}%</div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.round2_pct_color }}-400">{{ stat.round2_pct|floatformat:1 }}%</div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.round3_pct_color }}-400">{{ stat.round3_pct|floatformat:1 }}%</div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.round4_pct_color }}-400">{{ stat.round4_pct|floatformat:1 }}%</div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.avg_correct_color }}-400">{{ stat.avg_correct|floatformat:1 }}</div>
                 </div>
                 {% empty %}
                 <div class="p-6 text-center text-gray-500"><p>No game data available to generate statistics.</p></div>
@@ -47,6 +66,46 @@
         </div>
     </section>
 
+    <!-- Section: Top Round Scores by Podium -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Top Preliminary Round Scores by Podium</h2>
+        <p class="text-gray-400 mb-6">The highest scores achieved after the first four rounds from each podium position.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {% for podium_data in podium_leaderboards %}
+            <div>
+                <h3 class="font-semibold text-white mb-4">Podium {{ podium_data.podium_number }}</h3>
+                <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+                    <div class="divide-y divide-gray-700">
+                        {% for player in podium_data.players %}
+                        <div class="grid grid-cols-8 p-4 items-center">
+                            <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
+                            <div class="col-span-4">
+                                <span class="font-medium text-white">{{ player.name }}</span>
+                                <span class="block text-xs text-gray-500">
+                                    <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
+                                        Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="col-span-3 text-right font-mono text-lg text-blue-400">${{ player.round_total|floatformat:0 }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="p-6 text-center text-gray-500"><p>No data available.</p></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="text-center text-sm text-gray-400 my-8 py-4 border-y border-gray-700">
+        Quick links to:
+        <a href="#podium-performance" class="font-semibold text-yellow-400 hover:underline px-2">Preliminary Rounds</a> |
+        <a href="#fast-line-performance" class="font-semibold text-yellow-400 hover:underline px-2">Fast Line</a> |
+        <a href="#final-round-performance" class="font-semibold text-yellow-400 hover:underline px-2">Final Round</a>
+    </div>
+
     <!-- Section: Advancement -->
     <section class="mb-12">
         <h2 class="text-2xl font-bold text-white mb-4">Advancement</h2>
@@ -54,22 +113,24 @@
             Analysis of how often a player from each podium advanced to the next stage or won the game, and their average round score.
         </p>
         <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
-            <div class="grid grid-cols-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700">
-                <div class="px-6 py-4">Podium</div>
-                <div class="px-6 py-4 text-center">Avg. Score</div>
-                <div class="px-6 py-4 text-center">Advanced to Fast Line</div>
-                <div class="px-6 py-4 text-center">Won Game</div>
+            <div class="grid grid-cols-4 text-center text-xs md:text-sm font-bold text-gray-300 uppercase tracking-wider border-b border-gray-600 bg-gray-700/50">
+                <div class="px-4 py-3 text-left">
+                    <span class="hidden md:inline">Podium</span>
+                </div>
+                <div class="px-4 py-3">Avg Score</div>
+                <div class="px-4 py-3">Advanced</div>
+                <div class="px-4 py-3">Won Game</div>
             </div>
             <div class="divide-y divide-gray-700">
                 {% for stat in advancement_stats %}
                 <div class="grid grid-cols-4 items-center">
-                    <div class="px-6 py-4"><span class="font-bold text-lg text-white">Podium {{ stat.podium }}</span></div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.avg_score_color }}-400">${{ stat.avg_score|floatformat:0 }}</div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.advanced_pct_color }}-400">
+                    <div class="px-2 md:px-6 py-4"><span class="font-bold text-xs md:text-lg text-white">Podium {{ stat.podium }}</span></div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.avg_score_color }}-400">${{ stat.avg_score|floatformat:0 }}</div>
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.advanced_pct_color }}-400">
                         {{ stat.advanced_pct|floatformat:1 }}%
                         <span class="text-xs text-gray-500">({{ stat.advanced_count }})</span>
                     </div>
-                    <div class="px-6 py-4 text-center font-mono text-lg text-{{ stat.won_pct_color }}-400">
+                    <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-{{ stat.won_pct_color }}-400">
                         {{ stat.won_pct|floatformat:1 }}%
                         <span class="text-xs text-gray-500">({{ stat.won_count }})</span>
                     </div>
@@ -81,9 +142,16 @@
         </div>
     </section>
 
+    <div class="text-center text-sm text-gray-400 my-8 py-4 border-y border-gray-700">
+        Quick links to:
+        <a href="#podium-performance" class="font-semibold text-yellow-400 hover:underline px-2">Preliminary Rounds</a> |
+        <a href="#fast-line-performance" class="font-semibold text-yellow-400 hover:underline px-2">Fast Line</a> |
+        <a href="#final-round-performance" class="font-semibold text-yellow-400 hover:underline px-2">Final Round</a>
+    </div>
+
     <!-- Section: Fast Line Performance -->
     <section class="mb-12">
-        <h2 class="text-2xl font-bold text-white mb-4">Fast Line Performance</h2>
+        <h2 class="text-2xl font-bold text-white mb-4" id="fast-line-performance">Fast Line Performance</h2>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
                 <h3 class="font-semibold text-white mb-4">Distribution of Answers</h3>
@@ -104,11 +172,18 @@
                     </div>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-                    <h3 class="font-semibold text-white mb-4">Top 5 Performers (Correct)</h3>
-                    <ul class="space-y-3">
+                    <h3 class="font-semibold text-white mb-4">Top 5 Performers</h3>
+                    <ul class="space-y-4">
                         {% for player in top_fast_line_players %}
                         <li class="flex justify-between items-center">
-                            <span class="text-white">{{ player.name }}</span>
+                            <div>
+                                <p class="text-white">{{ player.name }}</p>
+                                <p class="text-xs text-gray-500">
+                                    <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
+                                        Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
+                                    </a>
+                                </p>
+                            </div>
                             <span class="font-mono text-green-400">{{ player.fast_line_correct_count }} <span class="text-gray-500">/</span> <span class="text-red-400">{{ player.fast_line_incorrect_count }}</span></span>
                         </li>
                         {% empty %}
@@ -120,18 +195,27 @@
         </div>
     </section>
 
+    <div class="text-center text-sm text-gray-400 my-8 py-4 border-y border-gray-700">
+        Quick links to:
+        <a href="#podium-performance" class="font-semibold text-yellow-400 hover:underline px-2">Preliminary Rounds</a> |
+        <a href="#fast-line-performance" class="font-semibold text-yellow-400 hover:underline px-2">Fast Line</a> |
+        <a href="#final-round-performance" class="font-semibold text-yellow-400 hover:underline px-2">Final Round</a>
+    </div>
+
     <!-- Section: Final Round Performance -->
     <section class="mb-12">
-        <h2 class="text-2xl font-bold text-white mb-4">Final Round Performance</h2>
+        <h2 class="text-2xl font-bold text-white mb-4" id="final-round-performance">Final Round Performance</h2>
         <p class="text-gray-400 mb-6">
             The percentage distribution for the number of questions answered correctly in the final round.
         </p>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
             {% for stat in final_round_stats %}
-            <div class="p-4 rounded-xl shadow-lg border {% if stat.correct_count == 5 %}border-green-700 bg-green-900/50{% else %}border-blue-700 bg-blue-900/50{% endif %}">
-                <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
-                <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
-            </div>
+                {% if stat.correct_count != 4 %}
+                <div class="p-4 rounded-xl shadow-lg border {% if stat.correct_count == 5 %}border-green-700 bg-green-900/50{% else %}border-blue-700 bg-blue-900/50{% endif %}">
+                    <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
+                    <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
+                </div>
+                {% endif %}
             {% empty %}
             <div class="col-span-full p-6 text-center text-gray-500 bg-gray-800 rounded-xl">
                 <p>No final round data available to generate statistics.</p>
@@ -139,6 +223,13 @@
             {% endfor %}
         </div>
     </section>
+
+    <div class="text-center text-sm text-gray-400 my-8 py-4 border-y border-gray-700">
+        Quick links to:
+        <a href="#podium-performance" class="font-semibold text-yellow-400 hover:underline px-2">Preliminary Rounds</a> |
+        <a href="#fast-line-performance" class="font-semibold text-yellow-400 hover:underline px-2">Fast Line</a> |
+        <a href="#final-round-performance" class="font-semibold text-yellow-400 hover:underline px-2">Final Round</a>
+    </div>
 
     <!-- Section: Leaderboards -->
     <section class="mb-12">
@@ -154,7 +245,11 @@
                             <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
                             <div class="col-span-4">
                                 <span class="font-medium text-white">{{ player.name }}</span>
-                                <span class="block text-xs text-gray-500">Game #{{ player.game.id }} on {{ player.game.air_date|date:"M j, Y" }}</span>
+                                <span class="block text-xs text-gray-500">
+                                    <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
+                                        Podium {{ player.podium_number }}, Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
+                                    </a>
+                                </span>
                             </div>
                             <div class="col-span-3 text-right font-mono text-lg text-yellow-400">${{ player.fast_line_total|floatformat:0 }}</div>
                         </div>
@@ -174,7 +269,11 @@
                             <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
                             <div class="col-span-4">
                                 <span class="font-medium text-white">{{ player.name }}</span>
-                                <span class="block text-xs text-gray-500">Game #{{ player.game.id }} on {{ player.game.air_date|date:"M j, Y" }}</span>
+                                <span class="block text-xs text-gray-500">
+                                    <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
+                                        Podium {{ player.podium_number }}, Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
+                                    </a>
+                                </span>
                             </div>
                             <div class="col-span-3 text-right font-mono text-lg text-green-400">${{ player.total_winnings|floatformat:0 }}</div>
                         </div>

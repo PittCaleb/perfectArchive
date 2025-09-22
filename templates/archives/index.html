@@ -15,6 +15,15 @@
         </p>
     </div>
 
+    <!-- How the Game is Played Section -->
+    <section class="mb-12 bg-gray-800 rounded-2xl p-6 border border-gray-700 space-y-4 text-gray-300 leading-relaxed">
+        <h2 class="text-2xl font-bold text-white mb-2">How the Game is Played</h2>
+        <p>
+            The Perfect Line challenges four contestants to place a series of items in the correct order. In the four preliminary rounds, players share a prize pot for correctly positioning items on the board. The top two players advance to a high-speed "Fast Line" round, with the winner moving on to the final challenge: perfectly matching five items to their retail prices to win their entire accumulated jackpot.
+        </p>
+    </section>
+
+
     {% if latest_game %}
     <div class="text-center text-gray-500 font-semibold mb-10">
         <p>Through Game #{{ latest_game.id }} on {{ latest_game.air_date|date:"F j, Y" }}</p>
@@ -30,8 +39,8 @@
                     <h3 class="text-xl font-bold text-white">{{ latest_game.episode_title }}</h3>
                     <p class="text-sm text-gray-400">{{ latest_game.air_date|date:"F j, Y" }} (Ep. {{ latest_game.episode_number }})</p>
                 </div>
-                <div class="flex-shrink-0 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <span class="text-gray-900 font-bold text-lg">{{ latest_game.id }}</span>
+                <div class="flex-shrink-0 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center whitespace-nowrap">
+                    <span class="text-gray-900 font-bold text-base">Ep. {{ latest_game.id }}</span>
                 </div>
             </div>
 
@@ -53,30 +62,33 @@
                     <span class="ml-4 font-mono text-gray-300">${{ player.round_total_score|floatformat:0 }}</span>
                 </div>
 
-                <!-- Fast Line Results -->
-                <div class="md:col-span-5 flex items-center">
-                    {% if player.is_advancing %}
-                        <div class="flex items-center space-x-2">
-                            <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_correct_count|default:"-" }}</div>
-                            <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_incorrect_count|default:"-" }}</div>
-                            <span class="ml-4 font-mono text-gray-300">${{ player.fast_line_total_score|floatformat:0 }}</span>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Final Winnings -->
-                <div class="md:col-span-12 text-right">
-                {% if player.is_winner %}
-                    <div class="inline-flex items-center space-x-2">
-                        {% if player.final_round_correct_count == 5 %}
-                            <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">5</div>
-                            <div class="bg-green-600 text-white font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
-                        {% else %}
-                             <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.final_round_correct_count|default:"0" }}</div>
-                            <div class="bg-green-800 text-green-300 font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
+                <!-- Fast Line & Final Winnings Column -->
+                <div class="md:col-span-5 flex items-center justify-between">
+                    <!-- Fast Line Results (Aligned Left) -->
+                    <div>
+                        {% if player.is_advancing %}
+                            <div class="flex items-center space-x-2">
+                                <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_correct_count|default:"-" }}</div>
+                                <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_incorrect_count|default:"-" }}</div>
+                                <span class="ml-4 font-mono text-gray-300">${{ player.fast_line_total_score|floatformat:0 }}</span>
+                            </div>
                         {% endif %}
                     </div>
-                {% endif %}
+
+                    <!-- Final Winnings (Aligned Right) -->
+                    <div>
+                        {% if player.is_winner %}
+                            <div class="inline-flex items-center space-x-2">
+                                {% if player.final_round_correct_count == 5 %}
+                                    <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">5</div>
+                                    <div class="bg-green-600 text-white font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
+                                {% else %}
+                                     <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.final_round_correct_count|default:"0" }}</div>
+                                    <div class="bg-green-800 text-green-300 font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -93,7 +105,7 @@
                 <div class="col-span-1 font-bold text-2xl text-yellow-400">#{{ forloop.counter }}</div>
                 <div class="col-span-4">
                     <p class="font-semibold text-lg text-white">{{ player.name }}</p>
-                    <p class="text-xs text-gray-500">Game #{{ player.game.id }} on {{ player.game.air_date|date:"M j, Y" }}</p>
+                    <p class="text-xs text-gray-500">Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}</p>
                 </div>
                 <div class="col-span-3 text-right font-mono text-2xl text-green-400">${{ player.total_winnings|floatformat:0 }}</div>
             </div>

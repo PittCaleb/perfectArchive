@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Perfect Line Archives{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZWCC724JY9"></script>
     <script>
@@ -10,17 +15,14 @@
 
       gtag('config', 'G-ZWCC724JY9');
     </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Perfect Line Archives{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Ad Sense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9239916261420118"
+         crossorigin="anonymous"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9239916261420118"
-     crossorigin="anonymous"></script>
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -35,9 +37,9 @@
                     <div class="flex-shrink-0">
                         <a href="/" class="text-white font-bold text-xl">Perfect Line Archives</a>
                     </div>
+                    <!-- Desktop Menu -->
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <!-- Menu items -->
                             <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.url_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Recent Games</a>
                             <a href="{% url 'statistics' %}" class="{% if request.resolver_match.url_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Statistics</a>
                             <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Show Info</a>
@@ -48,6 +50,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- Desktop User Actions -->
                 <div class="hidden md:block">
                     <div class="ml-4 flex items-center md:ml-6">
                         {% if user.is_authenticated %}
@@ -62,6 +65,51 @@
                         {% endif %}
                     </div>
                 </div>
+                <!-- Mobile menu button -->
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <!-- Hamburger icon -->
+                        <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                        <!-- Close icon (hidden by default) -->
+                        <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu, show/hide based on menu state. -->
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
+                <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.url_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Recent Games</a>
+                <a href="{% url 'statistics' %}" class="{% if request.resolver_match.url_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Statistics</a>
+                <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Show Info</a>
+                <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">About</a>
+                {% if perms.archives.add_game %}
+                    <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Score a Game</a>
+                {% endif %}
+            </div>
+            <div class="border-t border-gray-700 pb-3 pt-4">
+                 {% if user.is_authenticated %}
+                <div class="flex items-center px-5">
+                    <div class="ml-3">
+                        <div class="text-base font-medium leading-none text-white">{{ user.email }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 space-y-1 px-2">
+                    {% if user.is_staff %}
+                        <a href="/perfect/perfect-admin/" class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Admin</a>
+                    {% endif %}
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Log Out</button>
+                    </form>
+                </div>
+                 {% endif %}
             </div>
         </div>
     </nav>
@@ -71,6 +119,21 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerIcon = mobileMenuButton.querySelector('svg:first-child');
+            const closeIcon = mobileMenuButton.querySelector('svg:last-child');
+
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                hamburgerIcon.classList.toggle('hidden');
+                closeIcon.classList.toggle('hidden');
+            });
+        });
+    </script>
 </body>
 </html>
 
