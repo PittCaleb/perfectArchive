@@ -1,11 +1,21 @@
 # perfectArchive
-Site description and methodology will eventually go here
+
+Django based code base for https://theperfectline.info/
+
+This site maintains the archive of game play for the CBS/Game Show Network television show The Perfect Line
+
+Site is a passion project to track statistics based on podium position and player performance
+
+It was also a learning experience for the developer as Google Gemini (2.5 Pro) was used to develop, modify and maintain
+the site. Not a single line of code was hand written. The entire project from start to finish is being performed through
+prompts before being tested locally and deployed. Even the AWS configuration and deployment procedures were performed
+using Gemini advice and instruction.
 
 # ToDo
+
 Top Table - Avg # Correct per round
 Performance by Podium position
-Fast Money episidoe info
+Fast Money episode info
 Fast Line 2 Green who advance
 Mobile font size/column count
-
-adSense
+Add Podium Position to high scorers lists
