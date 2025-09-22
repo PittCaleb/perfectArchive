@@ -12,10 +12,9 @@ prompts before being tested locally and deployed. Even the AWS configuration and
 using Gemini advice and instruction.
 
 # ToDo
-
-Top Table - Avg # Correct per round
-Performance by Podium position
-Fast Money episode info
-Fast Line 2 Green who advance
-Mobile font size/column count
-Add Podium Position to high scorers lists
+* Top Table - Avg # Correct per round
+* Performance by Podium position
+* Fast Money episode info
+* Fast Line 2 Green who advance
+* Mobile font size/column count
+* Add Podium Position to high scorers lists
