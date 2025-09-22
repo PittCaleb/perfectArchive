@@ -18,3 +18,7 @@ using Gemini advice and instruction.
 * Fast Line 2 Green who advance
 * Mobile font size/column count
 * Add Podium Position to high scorers lists
+* Eliminate #4 in Final Round Perf stats page (not possible)
+* Ad show description to both home page and show info page
+* Find video of show game play and embed?
+* 
