@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZWCC724JY9"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-ZWCC724JY9');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Perfect Line Archives{% endblock %}</title>
@@ -8,15 +17,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9239916261420118"
      crossorigin="anonymous"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
     </style>
 </head>
-
 <body class="h-full bg-gray-900 text-gray-200">
     <nav class="bg-gray-800">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -28,12 +38,12 @@
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
                             <!-- Menu items -->
-                            <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.url_name == 'recent_games' %}bg-gray-700 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Recent Games</a>
-                            <a href="{% url 'statistics' %}" class="{% if request.resolver_match.url_name == 'statistics' %}bg-gray-700 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Statistics</a>
-                            <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-700 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Show Info</a>
-                            <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-700 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">About</a>
+                            <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.url_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Recent Games</a>
+                            <a href="{% url 'statistics' %}" class="{% if request.resolver_match.url_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Statistics</a>
+                            <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Show Info</a>
+                            <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">About</a>
                              {% if perms.archives.add_game %}
-                                <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-700 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Score a Game</a>
+                                <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Score a Game</a>
                             {% endif %}
                         </div>
                     </div>
@@ -49,8 +59,6 @@
                                 {% csrf_token %}
                                 <button type="submit" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Log Out</button>
                             </form>
-                        {% else %}
-                            <!-- Login link has been removed -->
                         {% endif %}
                     </div>
                 </div>
