@@ -25,7 +25,7 @@
 
             <!-- Player List -->
             {% for player in game.players.all|dictsort:"podium_number" %}
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center py-2 {% if not forloop.last %}border-b border-gray-900/50{% endif %}">
+            <div class="flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-4 md:items-center py-2 {% if not forloop.last %}border-b border-gray-900/50{% endif %}">
                 <!-- Player Name and Podium -->
                 <div class="md:col-span-3">
                     <p class="font-semibold text-white">{{ player.name }}</p>
@@ -41,9 +41,9 @@
                     <span class="ml-4 font-mono text-gray-300">${{ player.round_total_score|floatformat:0 }}</span>
                 </div>
 
-                <!-- Fast Line & Final Winnings Column -->
-                <div class="md:col-span-5 flex items-center justify-between">
-                    <!-- Fast Line Results (Aligned Left) -->
+                <!-- Combined Section for Fast Line and Final Winnings -->
+                <div class="md:col-span-5 flex items-center justify-between mt-2 md:mt-0 ml-6 md:ml-0">
+                    <!-- This div is for the left part (Fast Line) -->
                     <div>
                         {% if player.is_advancing %}
                             <div class="flex items-center space-x-2">
@@ -53,8 +53,7 @@
                             </div>
                         {% endif %}
                     </div>
-
-                    <!-- Final Winnings (Aligned Right) -->
+                    <!-- This div is for the right part (Final Winnings) -->
                     <div>
                         {% if player.is_winner %}
                             <div class="inline-flex items-center space-x-2">
