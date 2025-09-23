@@ -130,6 +130,36 @@ def show_info_view(request):
 def statistics_view(request):
     latest_game = Game.objects.order_by('-id').first()
 
+    # --- Turn Order Performance Logic ---
+    turn_stats = {i: {'attempts': 0, 'correct': 0} for i in range(1, 5)}
+    all_players = Player.objects.all()
+
+    turn_order_map = {
+        1: {1: 1, 2: 2, 3: 3, 4: 4},  # Round 1: P1 is 1st, P2 is 2nd, etc.
+        2: {1: 4, 2: 1, 3: 2, 4: 3},  # Round 2: P2 is 1st, P1 is 4th, etc.
+        3: {1: 3, 2: 4, 3: 1, 4: 2},
+        4: {1: 2, 2: 3, 3: 4, 4: 1},
+    }
+
+    for player in all_players:
+        podium = player.podium_number
+        round_results = [player.round1_correct, player.round2_correct, player.round3_correct, player.round4_correct]
+
+        for i, is_correct in enumerate(round_results):
+            round_num = i + 1
+            if is_correct is not None:  # Only count rounds that were played
+                turn = turn_order_map[round_num][podium]
+                turn_stats[turn]['attempts'] += 1
+                if is_correct:
+                    turn_stats[turn]['correct'] += 1
+
+    turn_performance = []
+    for turn, data in turn_stats.items():
+        turn_performance.append({
+            'turn': turn,
+            'pct': (data['correct'] / data['attempts'] * 100) if data['attempts'] > 0 else 0
+        })
+
     # --- Podium Performance Logic ---
     podium_stats_query = Player.objects.values('podium_number').annotate(
         total_players=Count('id'),
@@ -284,7 +314,7 @@ def statistics_view(request):
                 else:
                     stat['pct_color'] = 'yellow'
 
-    # --- NEW: Top Podium Scores Logic ---
+    # --- Top Podium Scores Logic ---
     podium_leaderboards = []
     for i in range(1, 5):
         top_players = Player.objects.filter(podium_number=i).annotate(
@@ -303,6 +333,7 @@ def statistics_view(request):
         'latest_game': latest_game,
         'podium_stats': podium_stats,
         'advancement_stats': advancement_stats,
+        'turn_performance': turn_performance,
         'chart_labels': json.dumps(chart_labels),
         'correct_data': json.dumps(correct_data),
         'incorrect_data': json.dumps(incorrect_data),
