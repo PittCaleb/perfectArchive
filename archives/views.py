@@ -204,7 +204,7 @@ def statistics_view(request):
         })
 
     if advancement_stats:
-        for key in ['avg_score', 'advanced_pct', 'won_pct']:
+        for key in ['avg_score', 'won_pct']:
             values = [s[key] for s in advancement_stats]
             min_val, max_val = min(values), max(values)
             if min_val == max_val:
@@ -218,6 +218,17 @@ def statistics_view(request):
                 else:
                     stat[key + '_color'] = 'yellow'
 
+        sorted_by_adv_pct = sorted(advancement_stats, key=lambda x: x['advanced_pct'], reverse=True)
+        if len(sorted_by_adv_pct) == 4:
+            podium_color_map = {
+                sorted_by_adv_pct[0]['podium']: 'green',
+                sorted_by_adv_pct[1]['podium']: 'green',
+                sorted_by_adv_pct[2]['podium']: 'red',
+                sorted_by_adv_pct[3]['podium']: 'red',
+            }
+            for stat in advancement_stats:
+                stat['advanced_pct_color'] = podium_color_map.get(stat['podium'], 'gray')
+
     # --- Fast Line Performance & Leaderboard Logic ---
     correct_counts = dict(
         Player.objects.filter(fast_line_correct_count__isnull=False).values_list('fast_line_correct_count').annotate(
@@ -229,13 +240,22 @@ def statistics_view(request):
     incorrect_data = [incorrect_counts.get(i, 0) for i in range(16)]
     avg_stats = Player.objects.aggregate(avg_correct=Avg('fast_line_correct_count'),
                                          avg_incorrect=Avg('fast_line_incorrect_count'))
-    top_fast_line_players = Player.objects.filter(fast_line_correct_count__isnull=False).order_by(
-        '-fast_line_correct_count', 'fast_line_incorrect_count')[:5]
+    top_fast_line_players = Player.objects.select_related('game').filter(
+        fast_line_correct_count__isnull=False).order_by('-fast_line_correct_count', 'fast_line_incorrect_count')[:5]
     top_fast_line_scores = Player.objects.annotate(
         round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))).annotate(
         fast_line_total=F('round_total') + (F('fast_line_score') or 0)).filter(
         fast_line_score__isnull=False).select_related('game').order_by('-fast_line_total')[:10]
     leaderboard_data = Player.objects.select_related('game').order_by('-total_winnings')[:10]
+
+    all_game_ids = list(Game.objects.values_list('id', flat=True).order_by('-air_date', '-episode_number'))
+
+    leaderboard_players = list(top_fast_line_players) + list(top_fast_line_scores) + list(leaderboard_data)
+    game_ids_to_map = {p.game_id for p in leaderboard_players}
+    game_page_map = {game_id: (all_game_ids.index(game_id) // 5) + 1 for game_id in game_ids_to_map if
+                     game_id in all_game_ids}
+    for p in leaderboard_players:
+        p.page_number = game_page_map.get(p.game_id)
 
     # --- Final Round Performance Logic ---
     final_round_counts = dict(Player.objects.filter(final_round_correct_count__isnull=False).values_list(
@@ -264,6 +284,21 @@ def statistics_view(request):
                 else:
                     stat['pct_color'] = 'yellow'
 
+    # --- NEW: Top Podium Scores Logic ---
+    podium_leaderboards = []
+    for i in range(1, 5):
+        top_players = Player.objects.filter(podium_number=i).annotate(
+            round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))
+        ).select_related('game').order_by('-round_total')[:5]
+
+        for p in top_players:
+            p.page_number = game_page_map.get(p.game_id)
+
+        podium_leaderboards.append({
+            'podium_number': i,
+            'players': top_players
+        })
+
     context = {
         'latest_game': latest_game,
         'podium_stats': podium_stats,
@@ -275,7 +310,8 @@ def statistics_view(request):
         'top_fast_line_players': top_fast_line_players,
         'final_round_stats': final_round_stats,
         'top_fast_line_scores': top_fast_line_scores,
-        'leaderboard_data': leaderboard_data
+        'leaderboard_data': leaderboard_data,
+        'podium_leaderboards': podium_leaderboards,
     }
     return render(request, 'archives/statistics.html', context)
 
