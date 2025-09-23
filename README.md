@@ -12,6 +12,8 @@ prompts before being tested locally and deployed. Even the AWS configuration and
 using Gemini advice and instruction.
 
 # ToDo
+* Tab on score entry
+* Come from-behind fast line
 * Set up mail server
 * Contact Info
 * Find video of show game play and embed?
