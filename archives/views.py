@@ -132,7 +132,7 @@ def statistics_view(request):
 
     # --- Turn Order Performance Logic ---
     turn_stats = {i: {'attempts': 0, 'correct': 0} for i in range(1, 5)}
-    all_players = Player.objects.all()
+    all_players = Player.objects.select_related('game').all()
     all_games = Game.objects.prefetch_related('players').all()
     all_games_count = all_games.count()
 
@@ -162,7 +162,7 @@ def statistics_view(request):
             'pct': (data['correct'] / data['attempts'] * 100) if data['attempts'] > 0 else 0
         })
 
-    # --- Preliminary Round Winner Distribution Logic ---
+    # --- Preliminary Round Winner Distribution & Come From Behind Logic ---
     prelim_dist_counts = {i: 0 for i in range(5)}
     total_prelim_rounds = 0
     come_from_behind_victories = []
@@ -196,7 +196,7 @@ def statistics_view(request):
 
             if leader != trailer and trailer.id in winner_ids:
                 score_diff = leader.round_total - trailer.round_total
-                come_from_behind_victories.append(score_diff)
+                come_from_behind_victories.append({'player': trailer, 'diff': score_diff})
 
     preliminary_round_dist = []
     for i in range(5):
@@ -225,10 +225,11 @@ def statistics_view(request):
     come_from_behind_stats = {
         'count': len(come_from_behind_victories),
         'pct': (len(come_from_behind_victories) / total_fast_line_games * 100) if total_fast_line_games > 0 else 0,
-        'avg_diff': sum(come_from_behind_victories) / len(
+        'avg_diff': sum(v['diff'] for v in come_from_behind_victories) / len(
             come_from_behind_victories) if come_from_behind_victories else 0,
-        'max_diff': max(come_from_behind_victories) if come_from_behind_victories else 0
+        'max_diff': max(v['diff'] for v in come_from_behind_victories) if come_from_behind_victories else 0
     }
+    top_comebacks = sorted(come_from_behind_victories, key=lambda x: x['diff'], reverse=True)[:5]
 
     # --- Podium Performance Logic ---
     podium_stats_query = Player.objects.values('podium_number').annotate(
@@ -351,9 +352,9 @@ def statistics_view(request):
             count=Count('id')))
     incorrect_counts = dict(Player.objects.filter(fast_line_incorrect_count__isnull=False).values_list(
         'fast_line_incorrect_count').annotate(count=Count('id')))
-    chart_labels = list(range(16))
-    correct_data = [correct_counts.get(i, 0) for i in range(16)]
-    incorrect_data = [incorrect_counts.get(i, 0) for i in range(16)]
+    chart_labels = list(range(13))
+    correct_data = [correct_counts.get(i, 0) for i in range(13)]
+    incorrect_data = [incorrect_counts.get(i, 0) for i in range(13)]
     avg_stats = Player.objects.aggregate(avg_correct=Avg('fast_line_correct_count'),
                                          avg_incorrect=Avg('fast_line_incorrect_count'))
     top_fast_line_players = Player.objects.select_related('game').filter(
@@ -370,7 +371,8 @@ def statistics_view(request):
 
     all_game_ids = list(Game.objects.values_list('id', flat=True).order_by('-air_date', '-episode_number'))
 
-    leaderboard_players = list(top_fast_line_players) + list(top_fast_line_scores) + list(leaderboard_data)
+    leaderboard_players = list(top_fast_line_players) + list(top_fast_line_scores) + list(leaderboard_data) + [
+        v['player'] for v in top_comebacks]
     game_ids_to_map = {p.game_id for p in leaderboard_players}
     game_page_map = {game_id: (all_game_ids.index(game_id) // 5) + 1 for game_id in game_ids_to_map if
                      game_id in all_game_ids}
@@ -436,6 +438,7 @@ def statistics_view(request):
         'podium_leaderboards': podium_leaderboards,
         'aggregate_stats': aggregate_stats,
         'come_from_behind_stats': come_from_behind_stats,
+        'top_comebacks': top_comebacks,
     }
     return render(request, 'archives/statistics.html', context)
 

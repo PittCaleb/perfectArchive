@@ -215,58 +215,80 @@
     <!-- Section: Fast Line Performance -->
     <section class="mb-12">
         <h2 class="text-2xl font-bold text-white mb-4" id="fast-line-performance">Fast Line Performance</h2>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-                <h3 class="font-semibold text-white mb-4">Distribution of Answers</h3>
-                <canvas id="fastLineChart"></canvas>
-            </div>
-            <div class="space-y-6">
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-                    <h3 class="font-semibold text-white mb-3 text-center">Averages</h3>
-                    <div class="flex justify-around text-center">
-                        <div>
-                            <p class="text-sm text-gray-400">Correct</p>
-                            <p class="font-bold text-2xl text-green-400">{{ avg_stats.avg_correct|floatformat:2 }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-400">Incorrect</p>
-                            <p class="font-bold text-2xl text-red-400">{{ avg_stats.avg_incorrect|floatformat:2 }}</p>
-                        </div>
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div>
+                        <h3 class="font-semibold text-white mb-4">Distribution of Answers</h3>
+                        <canvas id="fastLineChart"></canvas>
+                    </div>
+                    <div class="bg-gray-900/50 p-6 rounded-2xl">
+                        <h3 class="font-semibold text-white mb-4">Top 5 Performers</h3>
+                        <ul class="space-y-4">
+                            {% for player in top_fast_line_players %}
+                            <li class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-white">{{ player.name }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
+                                            Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
+                                        </a>
+                                    </p>
+                                </div>
+                                <span class="font-mono text-green-400">{{ player.fast_line_correct_count }} <span class="text-gray-500">/</span> <span class="text-red-400">{{ player.fast_line_incorrect_count }}</span></span>
+                            </li>
+                            {% empty %}
+                            <li class="text-gray-500">No data available.</li>
+                            {% endfor %}
+                        </ul>
                     </div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-                    <h3 class="font-semibold text-white mb-4">Top 5 Performers</h3>
-                    <ul class="space-y-4">
-                        {% for player in top_fast_line_players %}
-                        <li class="flex justify-between items-center">
+                <div class="space-y-6">
+                    <div class="bg-gray-900/50 p-6 rounded-2xl">
+                        <h3 class="font-semibold text-white mb-3 text-center">Averages</h3>
+                        <div class="flex justify-around text-center">
                             <div>
-                                <p class="text-white">{{ player.name }}</p>
-                                <p class="text-xs text-gray-500">
-                                    <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
-                                        Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
-                                    </a>
-                                </p>
+                                <p class="text-sm text-gray-400">Correct</p>
+                                <p class="font-bold text-2xl text-green-400">{{ avg_stats.avg_correct|floatformat:2 }}</p>
                             </div>
-                            <span class="font-mono text-green-400">{{ player.fast_line_correct_count }} <span class="text-gray-500">/</span> <span class="text-red-400">{{ player.fast_line_incorrect_count }}</span></span>
-                        </li>
-                        {% empty %}
-                        <li class="text-gray-500">No data available.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-                    <h3 class="font-semibold text-white mb-4 text-center">Come From Behind Victories</h3>
-                    <div class="text-center">
-                        <p class="text-4xl font-bold text-green-400">{{ come_from_behind_stats.count }}</p>
-                        <p class="text-sm text-gray-400">({{ come_from_behind_stats.pct|floatformat:1 }}% of games)</p>
+                            <div>
+                                <p class="text-sm text-gray-400">Incorrect</p>
+                                <p class="font-bold text-2xl text-red-400">{{ avg_stats.avg_incorrect|floatformat:2 }}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-700 text-center">
-                        <p class="text-sm text-gray-400">Avg. Score Difference Overcome</p>
-                        <p class="text-lg font-bold text-yellow-400">${{ come_from_behind_stats.avg_diff|floatformat:0 }}</p>
-                    </div>
-                    <div class="mt-2 text-center">
-                        <p class="text-sm text-gray-400">Largest Comeback</p>
-                        <p class="text-lg font-bold text-yellow-400">${{ come_from_behind_stats.max_diff|floatformat:0 }}</p>
+                    <div class="bg-gray-900/50 p-6 rounded-2xl">
+                        <h3 class="font-semibold text-white mb-4 text-center">Come From Behind Victories</h3>
+                        <div class="text-center">
+                            <p class="text-4xl font-bold text-green-400">{{ come_from_behind_stats.count }}</p>
+                            <p class="text-sm text-gray-400">({{ come_from_behind_stats.pct|floatformat:1 }}% of games)</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-700 text-center">
+                            <p class="text-sm text-gray-400">Avg. Score Difference Overcome</p>
+                            <p class="text-lg font-bold text-yellow-400">${{ come_from_behind_stats.avg_diff|floatformat:0 }}</p>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <p class="text-sm text-gray-400">Largest Comeback</p>
+                            <p class="text-lg font-bold text-yellow-400">${{ come_from_behind_stats.max_diff|floatformat:0 }}</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-700">
+                            <h4 class="font-semibold text-white mb-3 text-center text-sm">Top 5 Comebacks</h4>
+                            <ul class="space-y-2">
+                                {% for comeback in top_comebacks %}
+                                <li class="flex justify-between items-center text-sm">
+                                    <div>
+                                        <span class="text-white">{{ comeback.player.name }}</span>
+                                        <a href="{% url 'recent_games' %}?page={{ comeback.player.page_number }}#game-{{ comeback.player.game.id }}" class="text-xs text-gray-500 hover:underline" title="View this game">
+                                            (Ep {{ comeback.player.game.id }})
+                                        </a>
+                                    </div>
+                                    <span class="font-mono text-green-400">${{ comeback.diff|floatformat:0 }}</span>
+                                </li>
+                                {% empty %}
+                                <li class="text-gray-500 text-center">No data available.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
