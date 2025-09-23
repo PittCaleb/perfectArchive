@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Perfect Line Archives - Home{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4">
     <header class="text-center mb-12">
-        <h1 class="text-3xl md:text-4xl font-bold text-white">Welcome to the Perfect Line Archives</h1>
-        <p class="text-md md:text-lg text-gray-400 mt-2">A fan-run project dedicated to exploring the statistics behind one of television's most exciting game shows.</p>
+        <img src="{% static 'archives/images/pl_logo_cr_tr.png' %}" alt="The Perfect Line Archive. By Fans, For Fans" class="mx-auto h-24 md:h-32">
     </header>
 
     <div class="text-center mb-12">
         <p class="text-gray-300">
-            Explore our site by viewing the <a href="{% url 'recent_games' %}" class="text-yellow-400 font-semibold hover:underline">Recent Games</a> log or diving deep into the numbers on the <a href="{% url 'statistics' %}" class="text-yellow-400 font-semibold hover:underline">Statistics</a> page.
+            Be sure to explore the <a href="{% url 'recent_games' %}" class="text-yellow-400 font-semibold hover:underline">Recent Games</a> log and dive deep into the numbers on the <a href="{% url 'statistics' %}" class="text-yellow-400 font-semibold hover:underline">Statistics</a> and our <a href="{% url 'analysis' %}" class="text-yellow-400 font-semibold hover:underline">Analysis</a> page.
         </p>
     </div>
 
@@ -25,7 +25,7 @@
 
 
     {% if latest_game %}
-    <div class="text-center text-gray-500 font-semibold mb-10">
+    <div class="text-center text-yellow-400 font-semibold mb-10">
         <p>Through Game #{{ latest_game.id }} on {{ latest_game.air_date|date:"F j, Y" }}</p>
     </div>
 
@@ -62,30 +62,32 @@
                     <span class="ml-4 font-mono text-gray-300">${{ player.round_total_score|floatformat:0 }}</span>
                 </div>
 
-                <!-- Fast Line Results -->
-                <div class="md:col-span-3">
-                    {% if player.is_advancing %}
-                        <div class="flex items-center space-x-2">
-                            <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_correct_count|default:"-" }}</div>
-                            <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_incorrect_count|default:"-" }}</div>
-                            <span class="ml-4 font-mono text-gray-300">${{ player.fast_line_total_score|floatformat:0 }}</span>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Final Winnings -->
-                <div class="md:col-span-2 md:justify-self-end">
-                    {% if player.is_winner %}
-                        <div class="inline-flex items-center space-x-2">
-                            {% if player.final_round_correct_count == 5 %}
-                                <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">5</div>
-                                <div class="bg-green-600 text-white font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
-                            {% else %}
-                                 <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.final_round_correct_count|default:"0" }}</div>
-                                <div class="bg-green-800 text-green-300 font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                <!-- Combined Section for Fast Line and Final Winnings -->
+                <div class="md:col-span-5 flex items-center justify-between mt-2 md:mt-0 ml-6 md:ml-0">
+                    <!-- This div is for the left part (Fast Line) -->
+                    <div>
+                        {% if player.is_advancing %}
+                            <div class="flex items-center space-x-2">
+                                <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_correct_count|default:"-" }}</div>
+                                <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.fast_line_incorrect_count|default:"-" }}</div>
+                                <span class="ml-4 font-mono text-gray-300">${{ player.fast_line_total_score|floatformat:0 }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- This div is for the right part (Final Winnings) -->
+                    <div>
+                        {% if player.is_winner %}
+                            <div class="inline-flex items-center space-x-2">
+                                {% if player.final_round_correct_count == 5 %}
+                                    <div class="bg-green-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">5</div>
+                                    <div class="bg-green-600 text-white font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
+                                {% else %}
+                                     <div class="bg-red-500 text-white font-bold text-xs w-7 h-7 rounded-md flex items-center justify-center">{{ player.final_round_correct_count|default:"0" }}</div>
+                                    <div class="bg-green-800 text-green-300 font-bold text-sm px-3 py-1 rounded-md">${{ player.total_winnings|floatformat:0 }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endfor %}

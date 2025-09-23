@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}About - Perfect Line Archives{% endblock %}
 
@@ -19,6 +20,10 @@
         <p>
             This archive is our attempt to share that exploration with the wider fan community. We hope you enjoy browsing through the game results and the evolving statistics as much as we enjoy compiling them. Thank you for visiting, and we hope this site enhances your appreciation for the brilliant strategy and gameplay of The Perfect Line.
         </p>
+    </div>
+
+    <div class="text-center mt-12">
+        <img src="{% static 'archives/images/pl_logo_cr_tr.png' %}" alt="The Perfect Line Archive. By Fans, For Fans" class="mx-auto h-24 md:h-32">
     </div>
 
 </div>

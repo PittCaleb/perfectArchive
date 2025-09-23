@@ -8,6 +8,7 @@ urlpatterns = [
     # Main pages
     path('recent-games/', views.recent_games_view, name='recent_games'),
     path('statistics/', views.statistics_view, name='statistics'),
+    path('analysis/', views.analysis_view, name='analysis'),
     path('show-info/', views.show_info_view, name='show_info'),
     path('about/', views.about_view, name='about'),
 
