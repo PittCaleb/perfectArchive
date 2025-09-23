@@ -49,6 +49,7 @@ ROOT_URLCONF = 'perfectarchive.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # THIS IS THE FIX: This line tells Django to look in your top-level 'templates' folder.
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -106,7 +107,7 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
-USE_I18N = True
+USE_I1N = True
 
 USE_TZ = True
 
