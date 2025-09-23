@@ -254,6 +254,21 @@
                         {% endfor %}
                     </ul>
                 </div>
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                    <h3 class="font-semibold text-white mb-4 text-center">Come From Behind Victories</h3>
+                    <div class="text-center">
+                        <p class="text-4xl font-bold text-green-400">{{ come_from_behind_stats.count }}</p>
+                        <p class="text-sm text-gray-400">({{ come_from_behind_stats.pct|floatformat:1 }}% of games)</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-700 text-center">
+                        <p class="text-sm text-gray-400">Avg. Score Difference Overcome</p>
+                        <p class="text-lg font-bold text-yellow-400">${{ come_from_behind_stats.avg_diff|floatformat:0 }}</p>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p class="text-sm text-gray-400">Largest Comeback</p>
+                        <p class="text-lg font-bold text-yellow-400">${{ come_from_behind_stats.max_diff|floatformat:0 }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

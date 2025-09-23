@@ -165,9 +165,14 @@ def statistics_view(request):
     # --- Preliminary Round Winner Distribution Logic ---
     prelim_dist_counts = {i: 0 for i in range(5)}
     total_prelim_rounds = 0
+    come_from_behind_victories = []
+    total_fast_line_games = 0
+
     for game in all_games:
         players = list(game.players.all())
         if not players: continue
+
+        # Calculate prelim distribution
         for i in range(1, 5):
             round_correct_field = f'round{i}_correct'
             was_played = any(getattr(p, round_correct_field) is not None for p in players)
@@ -175,6 +180,23 @@ def statistics_view(request):
                 correct_count = sum(1 for p in players if getattr(p, round_correct_field) is True)
                 prelim_dist_counts[correct_count] += 1
                 total_prelim_rounds += 1
+
+        # Calculate Come From Behind stats
+        advancing_ids, winner_ids = _calculate_game_outcomes(game)
+        advancing_players = [p for p in players if p.id in advancing_ids]
+        if len(advancing_players) == 2:
+            total_fast_line_games += 1
+            p1 = advancing_players[0]
+            p2 = advancing_players[1]
+            p1.round_total = p1.round1_score + p1.round2_score + p1.round3_score + p1.round4_score
+            p2.round_total = p2.round1_score + p2.round2_score + p2.round3_score + p2.round4_score
+
+            leader = p1 if p1.round_total > p2.round_total else p2
+            trailer = p2 if p1.round_total > p2.round_total else p1
+
+            if leader != trailer and trailer.id in winner_ids:
+                score_diff = leader.round_total - trailer.round_total
+                come_from_behind_victories.append(score_diff)
 
     preliminary_round_dist = []
     for i in range(5):
@@ -198,6 +220,15 @@ def statistics_view(request):
                     stat['pct_color'] = 'red'
                 else:
                     stat['pct_color'] = 'yellow'
+
+    # --- Come From Behind Stats ---
+    come_from_behind_stats = {
+        'count': len(come_from_behind_victories),
+        'pct': (len(come_from_behind_victories) / total_fast_line_games * 100) if total_fast_line_games > 0 else 0,
+        'avg_diff': sum(come_from_behind_victories) / len(
+            come_from_behind_victories) if come_from_behind_victories else 0,
+        'max_diff': max(come_from_behind_victories) if come_from_behind_victories else 0
+    }
 
     # --- Podium Performance Logic ---
     podium_stats_query = Player.objects.values('podium_number').annotate(
@@ -331,8 +362,6 @@ def statistics_view(request):
         round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))).annotate(
         fast_line_total=F('round_total') + (F('fast_line_score') or 0)).filter(
         fast_line_score__isnull=False).select_related('game').order_by('-fast_line_total')[:20]
-
-    # THIS IS THE FIX: The query for the winnings leaderboard now has a secondary sort.
     leaderboard_data = Player.objects.annotate(
         round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))
     ).annotate(
@@ -406,6 +435,7 @@ def statistics_view(request):
         'leaderboard_data': leaderboard_data,
         'podium_leaderboards': podium_leaderboards,
         'aggregate_stats': aggregate_stats,
+        'come_from_behind_stats': come_from_behind_stats,
     }
     return render(request, 'archives/statistics.html', context)
 
