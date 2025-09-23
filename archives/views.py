@@ -133,10 +133,12 @@ def statistics_view(request):
     # --- Turn Order Performance Logic ---
     turn_stats = {i: {'attempts': 0, 'correct': 0} for i in range(1, 5)}
     all_players = Player.objects.all()
+    all_games = Game.objects.prefetch_related('players').all()
+    all_games_count = all_games.count()
 
     turn_order_map = {
-        1: {1: 1, 2: 2, 3: 3, 4: 4},  # Round 1: P1 is 1st, P2 is 2nd, etc.
-        2: {1: 4, 2: 1, 3: 2, 4: 3},  # Round 2: P2 is 1st, P1 is 4th, etc.
+        1: {1: 1, 2: 2, 3: 3, 4: 4},
+        2: {1: 4, 2: 1, 3: 2, 4: 3},
         3: {1: 3, 2: 4, 3: 1, 4: 2},
         4: {1: 2, 2: 3, 3: 4, 4: 1},
     }
@@ -147,7 +149,7 @@ def statistics_view(request):
 
         for i, is_correct in enumerate(round_results):
             round_num = i + 1
-            if is_correct is not None:  # Only count rounds that were played
+            if is_correct is not None:
                 turn = turn_order_map[round_num][podium]
                 turn_stats[turn]['attempts'] += 1
                 if is_correct:
@@ -159,6 +161,43 @@ def statistics_view(request):
             'turn': turn,
             'pct': (data['correct'] / data['attempts'] * 100) if data['attempts'] > 0 else 0
         })
+
+    # --- Preliminary Round Winner Distribution Logic ---
+    prelim_dist_counts = {i: 0 for i in range(5)}
+    total_prelim_rounds = 0
+    for game in all_games:
+        players = list(game.players.all())
+        if not players: continue
+        for i in range(1, 5):
+            round_correct_field = f'round{i}_correct'
+            was_played = any(getattr(p, round_correct_field) is not None for p in players)
+            if was_played:
+                correct_count = sum(1 for p in players if getattr(p, round_correct_field) is True)
+                prelim_dist_counts[correct_count] += 1
+                total_prelim_rounds += 1
+
+    preliminary_round_dist = []
+    for i in range(5):
+        count = prelim_dist_counts.get(i, 0)
+        preliminary_round_dist.append({
+            'correct_count': i,
+            'count': count,
+            'pct': (count / total_prelim_rounds * 100) if total_prelim_rounds > 0 else 0
+        })
+
+    if preliminary_round_dist and total_prelim_rounds > 0:
+        values = [s['pct'] for s in preliminary_round_dist]
+        min_val, max_val = min(values), max(values)
+        if min_val == max_val:
+            for stat in preliminary_round_dist: stat['pct_color'] = 'yellow'
+        else:
+            for stat in preliminary_round_dist:
+                if stat['pct'] == max_val:
+                    stat['pct_color'] = 'green'
+                elif stat['pct'] == min_val:
+                    stat['pct_color'] = 'red'
+                else:
+                    stat['pct_color'] = 'yellow'
 
     # --- Podium Performance Logic ---
     podium_stats_query = Player.objects.values('podium_number').annotate(
@@ -206,9 +245,25 @@ def statistics_view(request):
                 else:
                     stat[key + '_color'] = 'yellow'
 
+    # --- Aggregate Podium Performance Logic ---
+    aggregate_stats = None
+    if all_games_count > 0:
+        total_r1_correct = sum(s['r1_correct'] for s in podium_stats_query)
+        total_r2_correct = sum(s['r2_correct'] for s in podium_stats_query)
+        total_r3_correct = sum(s['r3_correct'] for s in podium_stats_query)
+        total_r4_correct = sum(s['r4_correct'] for s in podium_stats_query)
+        total_correct_answers = total_r1_correct + total_r2_correct + total_r3_correct + total_r4_correct
+
+        aggregate_stats = {
+            'avg_r1': total_r1_correct / all_games_count,
+            'avg_r2': total_r2_correct / all_games_count,
+            'avg_r3': total_r3_correct / all_games_count,
+            'avg_r4': total_r4_correct / all_games_count,
+            'avg_total': total_correct_answers / all_games_count
+        }
+
     # --- Advancement Stats Logic ---
     advancement_stats_raw = {i: {'total': 0, 'advanced': 0, 'won': 0} for i in range(1, 5)}
-    all_games = Game.objects.prefetch_related('players').all()
 
     for game in all_games:
         advancing_ids, winner_ids = _calculate_game_outcomes(game)
@@ -275,8 +330,14 @@ def statistics_view(request):
     top_fast_line_scores = Player.objects.annotate(
         round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))).annotate(
         fast_line_total=F('round_total') + (F('fast_line_score') or 0)).filter(
-        fast_line_score__isnull=False).select_related('game').order_by('-fast_line_total')[:10]
-    leaderboard_data = Player.objects.select_related('game').order_by('-total_winnings')[:10]
+        fast_line_score__isnull=False).select_related('game').order_by('-fast_line_total')[:20]
+
+    # THIS IS THE FIX: The query for the winnings leaderboard now has a secondary sort.
+    leaderboard_data = Player.objects.annotate(
+        round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))
+    ).annotate(
+        fast_line_total=F('round_total') + (F('fast_line_score') or 0)
+    ).select_related('game').order_by('-total_winnings', '-fast_line_total')[:20]
 
     all_game_ids = list(Game.objects.values_list('id', flat=True).order_by('-air_date', '-episode_number'))
 
@@ -319,7 +380,7 @@ def statistics_view(request):
     for i in range(1, 5):
         top_players = Player.objects.filter(podium_number=i).annotate(
             round_total=Sum(F('round1_score') + F('round2_score') + F('round3_score') + F('round4_score'))
-        ).select_related('game').order_by('-round_total')[:5]
+        ).select_related('game').order_by('-round_total')[:10]
 
         for p in top_players:
             p.page_number = game_page_map.get(p.game_id)
@@ -334,6 +395,7 @@ def statistics_view(request):
         'podium_stats': podium_stats,
         'advancement_stats': advancement_stats,
         'turn_performance': turn_performance,
+        'preliminary_round_dist': preliminary_round_dist,
         'chart_labels': json.dumps(chart_labels),
         'correct_data': json.dumps(correct_data),
         'incorrect_data': json.dumps(incorrect_data),
@@ -343,8 +405,14 @@ def statistics_view(request):
         'top_fast_line_scores': top_fast_line_scores,
         'leaderboard_data': leaderboard_data,
         'podium_leaderboards': podium_leaderboards,
+        'aggregate_stats': aggregate_stats,
     }
     return render(request, 'archives/statistics.html', context)
+
+
+# View for Analysis page
+def analysis_view(request):
+    return render(request, 'archives/analysis.html')
 
 
 # View for About page

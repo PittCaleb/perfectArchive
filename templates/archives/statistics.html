@@ -63,6 +63,16 @@
                 <div class="p-6 text-center text-gray-500"><p>No game data available to generate statistics.</p></div>
                 {% endfor %}
             </div>
+            {% if aggregate_stats %}
+            <div class="grid grid-cols-6 items-center bg-gray-900/50 border-t-2 border-gray-600">
+                <div class="px-2 md:px-6 py-4"><span class="font-bold text-xs md:text-lg text-yellow-400">Average</span></div>
+                <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-gray-300" title="Average number of players correct per round">{{ aggregate_stats.avg_r1|floatformat:2 }}</div>
+                <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-gray-300" title="Average number of players correct per round">{{ aggregate_stats.avg_r2|floatformat:2 }}</div>
+                <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-gray-300" title="Average number of players correct per round">{{ aggregate_stats.avg_r3|floatformat:2 }}</div>
+                <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-gray-300" title="Average number of players correct per round">{{ aggregate_stats.avg_r4|floatformat:2 }}</div>
+                <div class="px-2 md:px-6 py-4 text-center font-mono text-sm md:text-lg text-gray-300" title="Average total correct answers per game">{{ aggregate_stats.avg_total|floatformat:2 }}</div>
+            </div>
+            {% endif %}
         </div>
     </section>
 
@@ -94,6 +104,28 @@
         </div>
     </section>
 
+    <!-- Section: Correct Answer Distribution -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Correct Answer Distribution</h2>
+        <p class="text-gray-400 mb-6">
+            The percentage distribution for the number of correct answers per round.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+            {% for stat in preliminary_round_dist %}
+            <div class="p-4 rounded-xl shadow-lg border border-blue-700 bg-blue-900/50">
+                <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
+                <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
+                <p class="text-xs text-gray-500">({{ stat.count }} lines)</p>
+            </div>
+            {% endfor %}
+            {% if not preliminary_round_dist %}
+            <div class="col-span-full p-6 text-center text-gray-500 bg-gray-800 rounded-xl">
+                <p>No preliminary round data available to generate statistics.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
     <!-- Section: Top Round Scores by Podium -->
     <section class="mb-12">
         <h2 class="text-2xl font-bold text-white mb-4">Top Preliminary Round Scores by Podium</h2>
@@ -105,7 +137,7 @@
                 <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
                     <div class="divide-y divide-gray-700">
                         {% for player in podium_data.players %}
-                        <div class="grid grid-cols-8 p-4 items-center">
+                        <div class="grid grid-cols-8 p-4 items-center {% if forloop.counter > 5 %}hidden podium-more-{{ podium_data.podium_number }}{% endif %}">
                             <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
                             <div class="col-span-4">
                                 <span class="font-medium text-white">{{ player.name }}</span>
@@ -117,10 +149,13 @@
                             </div>
                             <div class="col-span-3 text-right font-mono text-lg text-blue-400">${{ player.round_total|floatformat:0 }}</div>
                         </div>
-                        {% empty %}
-                        <div class="p-6 text-center text-gray-500"><p>No data available.</p></div>
                         {% endfor %}
                     </div>
+                    {% if podium_data.players|length > 5 %}
+                    <div class="p-4 text-center bg-gray-800/50">
+                        <button class="text-yellow-400 hover:underline text-sm font-semibold show-more-btn" data-target=".podium-more-{{ podium_data.podium_number }}">More</button>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -242,6 +277,7 @@
                 <div class="p-4 rounded-xl shadow-lg border {% if stat.correct_count == 5 %}border-green-700 bg-green-900/50{% else %}border-blue-700 bg-blue-900/50{% endif %}">
                     <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
                     <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
+                    <p class="text-xs text-gray-500">({{ stat.count }} times)</p>
                 </div>
                 {% endif %}
             {% empty %}
@@ -269,9 +305,9 @@
                  <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
                     <div class="divide-y divide-gray-700">
                         {% for player in top_fast_line_scores %}
-                        <div class="grid grid-cols-8 p-4 items-center">
+                        <div class="grid grid-cols-12 p-4 items-center gap-2 {% if forloop.counter > 10 %}hidden leaderboard-more-fastline{% endif %}">
                             <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
-                            <div class="col-span-4">
+                            <div class="col-span-5">
                                 <span class="font-medium text-white">{{ player.name }}</span>
                                 <span class="block text-xs text-gray-500">
                                     <a href="{% url 'recent_games' %}?page={{ player.page_number }}#game-{{ player.game.id }}" class="hover:underline" title="View this game">
@@ -279,12 +315,24 @@
                                     </a>
                                 </span>
                             </div>
+                            <div class="col-span-3 text-center">
+                                {% if player.total_winnings > 1000 %}
+                                    <span class="inline-block bg-green-500/20 text-green-300 text-xs font-semibold px-2 py-1 rounded-full">Grand Champion</span>
+                                {% elif player.total_winnings == 1000 %}
+                                    <span class="inline-block bg-yellow-500/20 text-yellow-300 text-xs font-semibold px-2 py-1 rounded-full">{{ player.final_round_correct_count }} Correct</span>
+                                {% else %}
+                                    <span class="inline-block bg-red-500/20 text-red-300 text-xs font-semibold px-2 py-1 rounded-full">Fast Line</span>
+                                {% endif %}
+                            </div>
                             <div class="col-span-3 text-right font-mono text-lg text-yellow-400">${{ player.fast_line_total|floatformat:0 }}</div>
                         </div>
-                        {% empty %}
-                        <div class="p-6 text-center text-gray-500"><p>No data available.</p></div>
                         {% endfor %}
                     </div>
+                    {% if top_fast_line_scores|length > 10 %}
+                    <div class="p-4 text-center bg-gray-800/50">
+                        <button class="text-yellow-400 hover:underline text-sm font-semibold show-more-btn" data-target=".leaderboard-more-fastline">More</button>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <!-- Top Winnings -->
@@ -293,7 +341,7 @@
                 <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
                     <div class="divide-y divide-gray-700">
                         {% for player in leaderboard_data %}
-                        <div class="grid grid-cols-8 p-4 items-center">
+                        <div class="grid grid-cols-8 p-4 items-center {% if forloop.counter > 10 %}hidden leaderboard-more-winnings{% endif %}">
                             <div class="col-span-1 font-bold text-lg text-white">#{{ forloop.counter }}</div>
                             <div class="col-span-4">
                                 <span class="font-medium text-white">{{ player.name }}</span>
@@ -303,12 +351,20 @@
                                     </a>
                                 </span>
                             </div>
-                            <div class="col-span-3 text-right font-mono text-lg text-green-400">${{ player.total_winnings|floatformat:0 }}</div>
+                            <div class="col-span-3 text-right">
+                                <span class="block font-mono text-lg text-green-400">${{ player.total_winnings|floatformat:0 }}</span>
+                                {% if player.total_winnings == 1000 %}
+                                <span class="block font-mono text-xs text-gray-500">(${{ player.fast_line_total|floatformat:0 }})</span>
+                                {% endif %}
+                            </div>
                         </div>
-                        {% empty %}
-                        <div class="p-6 text-center text-gray-500"><p>No player data available.</p></div>
                         {% endfor %}
                     </div>
+                     {% if leaderboard_data|length > 10 %}
+                    <div class="p-4 text-center bg-gray-800/50">
+                        <button class="text-yellow-400 hover:underline text-sm font-semibold show-more-btn" data-target=".leaderboard-more-winnings">More</button>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -318,6 +374,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Chart.js script remains the same
     const ctx = document.getElementById('fastLineChart');
     if (ctx) {
         new Chart(ctx, {
@@ -328,7 +385,7 @@
                     {
                         label: '# of Correct Answers',
                         data: {{ correct_data|safe }},
-                        borderColor: 'rgb(74, 222, 128)', // green-400
+                        borderColor: 'rgb(74, 222, 128)',
                         backgroundColor: 'rgba(74, 222, 128, 0.2)',
                         tension: 0.3,
                         fill: true,
@@ -336,7 +393,7 @@
                     {
                         label: '# of Incorrect Answers',
                         data: {{ incorrect_data|safe }},
-                        borderColor: 'rgb(248, 113, 113)', // red-400
+                        borderColor: 'rgb(248, 113, 113)',
                         backgroundColor: 'rgba(248, 113, 113, 0.2)',
                         tension: 0.3,
                         fill: true,
@@ -347,11 +404,8 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            color: '#9ca3af', // gray-400
-                            stepSize: 1
-                        },
-                        grid: { color: '#374151' } // gray-700
+                        ticks: { color: '#9ca3af', stepSize: 1 },
+                        grid: { color: '#374151' }
                     },
                     x: {
                         ticks: { color: '#9ca3af' },
@@ -360,14 +414,29 @@
                 },
                 plugins: {
                     legend: {
-                        labels: {
-                            color: '#d1d5db' // gray-300
-                        }
+                        labels: { color: '#d1d5db' }
                     }
                 }
             }
         });
     }
+
+    // JavaScript for "More" buttons
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.show-more-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetSelector = button.dataset.target;
+                document.querySelectorAll(targetSelector).forEach(el => {
+                    el.classList.toggle('hidden');
+                });
+                if (button.textContent === 'More') {
+                    button.textContent = 'Less';
+                } else {
+                    button.textContent = 'More';
+                }
+            });
+        });
+    });
 </script>
 {% endblock %}
 
