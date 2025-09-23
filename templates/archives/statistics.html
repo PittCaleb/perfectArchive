@@ -66,6 +66,34 @@
         </div>
     </section>
 
+    <!-- Section: Performance by Turn Order -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Performance by Turn Order</h2>
+        <p class="text-gray-400 mb-6">
+            This table shows the overall success rate based on the order a player takes their turn in a round, regardless of their starting podium.
+        </p>
+        <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+            <div class="grid grid-cols-2 text-center text-sm font-bold text-gray-300 uppercase tracking-wider border-b border-gray-600 bg-gray-700/50">
+                <div class="px-4 py-3 text-left">Turn Position</div>
+                <div class="px-4 py-3 text-center">Success Rate</div>
+            </div>
+            <div class="divide-y divide-gray-700">
+                {% for stat in turn_performance %}
+                <div class="grid grid-cols-2 items-center">
+                    <div class="px-6 py-4">
+                        <span class="font-bold text-lg text-white">Player {{ stat.turn }}{% if stat.turn == 1 %}st{% elif stat.turn == 2 %}nd{% elif stat.turn == 3 %}rd{% else %}th{% endif %} to Act</span>
+                    </div>
+                    <div class="px-6 py-4 text-center font-mono text-lg text-yellow-400">
+                        {{ stat.pct|floatformat:1 }}%
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-6 text-center text-gray-500"><p>No game data available to generate statistics.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
     <!-- Section: Top Round Scores by Podium -->
     <section class="mb-12">
         <h2 class="text-2xl font-bold text-white mb-4">Top Preliminary Round Scores by Podium</h2>

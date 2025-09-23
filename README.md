@@ -12,9 +12,9 @@ prompts before being tested locally and deployed. Even the AWS configuration and
 using Gemini advice and instruction.
 
 # ToDo
-* Performance by Podium position
 * Find video of show game play and embed?
 * Tied games stats (# ties in after 4, # ties for victory)
 * Contact Info
 * Set up mail server
 * Cache data from views somehow?
+* Bug on save for tie after fast line
