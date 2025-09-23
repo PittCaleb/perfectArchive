@@ -207,6 +207,30 @@
                 }
             });
 
+            scorecard.addEventListener('keydown', (e) => {
+                // Check if the pressed key is Tab and the event is from a player name input
+                if (e.key === 'Tab' && e.target.classList.contains('player-name')) {
+                    const card = e.target.closest('.player-card');
+                    if (!card) return;
+
+                    const currentPlayerId = parseInt(card.dataset.playerId);
+                    const nextPlayerId = currentPlayerId + 1;
+
+                    // If there's a next player card, move focus to its name input
+                    if (nextPlayerId <= 4) {
+                        e.preventDefault(); // Prevent the default Tab behavior
+                        const nextCard = scorecard.querySelector(`.player-card[data-player-id="${nextPlayerId}"]`);
+                        if (nextCard) {
+                            const nextNameInput = nextCard.querySelector('.player-name');
+                            if (nextNameInput) {
+                                nextNameInput.focus();
+                            }
+                        }
+                    }
+                    // If it's the last player (player 4), let the default Tab behavior continue
+                }
+            });
+
             scorecard.addEventListener('click', (e) => {
                 const card = e.target.closest('.player-card');
                 if (!card) return;
@@ -481,4 +505,3 @@
     });
 </script>
 {% endblock %}
-
