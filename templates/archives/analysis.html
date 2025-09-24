@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Analysis - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4">
+    <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Our Analysis</h1>
+        <p class="text-md md:text-lg text-gray-400 mt-2">Exploring the patterns behind the game.</p>
+    </header>
+
+    <div class="bg-gray-800 rounded-2xl p-6 md:p-8 border border-gray-700 space-y-6 text-gray-300 leading-relaxed">
+        
+        <section>
+            <h2 class="text-2xl font-bold text-white mb-3">The Premise</h2>
+            <p>
+                After learning the rules of The Perfect Line, one thing immediately jumped out at us: the podium order, determined by a random pre-show draw, could have a tremendous impact on a player's performance and their chances of winning. There was only one way to know for sure—by cataloging every game, loading that information into a database, and running a statistical analysis on the results. So we did just that. And since we were doing it for ourselves, why not make the work public for you to follow along!
+            </p>
+        </section>
+
+        <div class="border-t border-yellow-400/20 my-6"></div>
+
+        <section>
+            <h2 class="text-2xl font-bold text-white mb-3">The Thesis</h2>
+            <p class="border-l-4 border-yellow-400 pl-4 italic text-gray-200">
+                As the starting podium rotates one position each round, prize money increases, and the difficulty of placing an item grows with each turn, players in podium positions 1 & 2 are at a distinct disadvantage compared to those in positions 3 & 4.
+            </p>
+        </section>
+
+        <div class="border-t border-yellow-400/20 my-6"></div>
+
+        <section>
+            <h2 class="text-2xl font-bold text-white mb-3">Interpreting the Data (Through 20 Games)</h2>
+            <p>
+                Our initial findings, based on the first 20 games logged, suggest our thesis is largely correct, with a few surprising results.
+            </p>
+            
+            <h3 class="text-xl font-semibold text-white mt-6 mb-2">Podium & Turn Order Performance</h3>
+            <p>
+                In the "Podium Performance" chart, we would expect the highest success rate (green) to follow a diagonal line from Podium 1/Round 1 to Podium 4/Round 4, as this represents the first turn in each round. The data largely bears this out. The "Performance by Turn Order" chart proves our theory even more directly: the earlier a player goes in a round, the better their chance of success. The first player to act has a nearly 33% better placement rate than the last player, a massive advantage when the prize pool is highest in the later rounds.
+            </p>
+
+            <h3 class="text-xl font-semibold text-white mt-6 mb-2">Advancement & Winning</h3>
+            <p>
+                The impact is most visible in the "Advancement" chart. You can see that Podium 4 advances to the Fast Line far more frequently than any other position and goes on to win half of all games. This can be directly attributed to entering the final stages with a significant financial advantage, effectively putting their opponent two or more questions behind going into the Final Line.
+            </p>
+
+            <h3 class="text-xl font-semibold text-white mt-6 mb-2">The Podium 3 Anomaly</h3>
+            <p>
+                We originally believed Podium 3 would be the second-best position to play from. Interestingly, through 20 games, it has proven to be statistically the worst at advancement. While Podium 2 has a better advancement record, they often arrive at the Fast Line with a financial disadvantage. This suggests that while Podium 4 has a clear advantage, the "sweet spot" for performance versus game mechanics might be more complex than we initially thought.
+            </p>
+        </section>
+
+        <div class="border-t border-yellow-400/20 my-6"></div>
+        
+        <section>
+             <h2 class="text-2xl font-bold text-white mb-3">A Note on Sample Size</h2>
+            <p>
+                It's important to remember that with only 20 games logged, our data set is still relatively small. Player skill is not yet randomized to the point of statistical irrelevance, and we've seen a wide range of question difficulties in all rounds. As we continue to log every game from the ongoing season, our analysis will become more accurate and insightful. We look forward to revisiting these numbers after 50 games have been entered!
+            </p>
+        </section>
+
+    </div>
+
+</div>
+{% endblock %}
+
