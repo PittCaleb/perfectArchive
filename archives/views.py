@@ -162,8 +162,10 @@ def statistics_view(request):
             'pct': (data['correct'] / data['attempts'] * 100) if data['attempts'] > 0 else 0
         })
 
-    # --- Preliminary Round Winner Distribution & Come From Behind Logic ---
+    # --- Preliminary Round Winner & Player Distribution Logic ---
     prelim_dist_counts = {i: 0 for i in range(5)}
+    player_prelim_correct_counts = {i: 0 for i in range(5)}
+    player_advancement_by_correct_count = {i: {'advanced': 0, 'total': 0} for i in range(5)}
     total_prelim_rounds = 0
     come_from_behind_victories = []
     total_fast_line_games = 0
@@ -172,7 +174,17 @@ def statistics_view(request):
         players = list(game.players.all())
         if not players: continue
 
-        # Calculate prelim distribution
+        advancing_ids, winner_ids = _calculate_game_outcomes(game)
+
+        for p in players:
+            correct_total = sum(
+                [1 for r in [p.round1_correct, p.round2_correct, p.round3_correct, p.round4_correct] if r is True])
+            player_prelim_correct_counts[correct_total] += 1
+
+            player_advancement_by_correct_count[correct_total]['total'] += 1
+            if p.id in advancing_ids:
+                player_advancement_by_correct_count[correct_total]['advanced'] += 1
+
         for i in range(1, 5):
             round_correct_field = f'round{i}_correct'
             was_played = any(getattr(p, round_correct_field) is not None for p in players)
@@ -181,8 +193,6 @@ def statistics_view(request):
                 prelim_dist_counts[correct_count] += 1
                 total_prelim_rounds += 1
 
-        # Calculate Come From Behind stats
-        advancing_ids, winner_ids = _calculate_game_outcomes(game)
         advancing_players = [p for p in players if p.id in advancing_ids]
         if len(advancing_players) == 2:
             total_fast_line_games += 1
@@ -198,6 +208,45 @@ def statistics_view(request):
                 score_diff = leader.round_total - trailer.round_total
                 come_from_behind_victories.append({'player': trailer, 'diff': score_diff})
 
+    all_players_count = all_players.count()
+
+    def color_code_dist(dist_list):
+        # THIS IS THE FIX: The check is now more generic to handle all cases
+        if not dist_list or not any(s.get('count', 0) > 0 or s.get('total_players', 0) > 0 for s in dist_list): return
+        values = [s['pct'] for s in dist_list]
+        min_val, max_val = min(values), max(values)
+        if min_val == max_val:
+            for stat in dist_list: stat['pct_color'] = 'yellow'
+        else:
+            for stat in dist_list:
+                if stat['pct'] == max_val:
+                    stat['pct_color'] = 'green'
+                elif stat['pct'] == min_val:
+                    stat['pct_color'] = 'red'
+                else:
+                    stat['pct_color'] = 'yellow'
+
+    player_prelim_dist = []
+    for i in range(5):
+        count = player_prelim_correct_counts.get(i, 0)
+        player_prelim_dist.append({
+            'correct_count': i,
+            'count': count,
+            'pct': (count / all_players_count * 100) if all_players_count > 0 else 0
+        })
+    color_code_dist(player_prelim_dist)
+
+    player_advancement_dist = []
+    for i in range(5):
+        data = player_advancement_by_correct_count[i]
+        player_advancement_dist.append({
+            'correct_count': i,
+            'advanced_count': data['advanced'],
+            'total_players': data['total'],
+            'pct': (data['advanced'] / data['total'] * 100) if data['total'] > 0 else 0
+        })
+    color_code_dist(player_advancement_dist)
+
     preliminary_round_dist = []
     for i in range(5):
         count = prelim_dist_counts.get(i, 0)
@@ -206,20 +255,7 @@ def statistics_view(request):
             'count': count,
             'pct': (count / total_prelim_rounds * 100) if total_prelim_rounds > 0 else 0
         })
-
-    if preliminary_round_dist and total_prelim_rounds > 0:
-        values = [s['pct'] for s in preliminary_round_dist]
-        min_val, max_val = min(values), max(values)
-        if min_val == max_val:
-            for stat in preliminary_round_dist: stat['pct_color'] = 'yellow'
-        else:
-            for stat in preliminary_round_dist:
-                if stat['pct'] == max_val:
-                    stat['pct_color'] = 'green'
-                elif stat['pct'] == min_val:
-                    stat['pct_color'] = 'red'
-                else:
-                    stat['pct_color'] = 'yellow'
+    color_code_dist(preliminary_round_dist)
 
     # --- Come From Behind Stats ---
     come_from_behind_stats = {
@@ -392,19 +428,7 @@ def statistics_view(request):
             'pct': (count / total_final_round_players * 100) if total_final_round_players > 0 else 0
         })
 
-    if final_round_stats and total_final_round_players > 0:
-        values = [s['pct'] for s in final_round_stats]
-        min_val, max_val = min(values), max(values)
-        if min_val == max_val:
-            for stat in final_round_stats: stat['pct_color'] = 'yellow'
-        else:
-            for stat in final_round_stats:
-                if stat['pct'] == max_val:
-                    stat['pct_color'] = 'green'
-                elif stat['pct'] == min_val:
-                    stat['pct_color'] = 'red'
-                else:
-                    stat['pct_color'] = 'yellow'
+    color_code_dist(final_round_stats)
 
     # --- Top Podium Scores Logic ---
     podium_leaderboards = []
@@ -427,6 +451,8 @@ def statistics_view(request):
         'advancement_stats': advancement_stats,
         'turn_performance': turn_performance,
         'preliminary_round_dist': preliminary_round_dist,
+        'player_prelim_dist': player_prelim_dist,
+        'player_advancement_dist': player_advancement_dist,
         'chart_labels': json.dumps(chart_labels),
         'correct_data': json.dumps(correct_data),
         'incorrect_data': json.dumps(incorrect_data),

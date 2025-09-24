@@ -108,7 +108,7 @@
     <section class="mb-12">
         <h2 class="text-2xl font-bold text-white mb-4">Correct Answer Distribution</h2>
         <p class="text-gray-400 mb-6">
-            The percentage distribution for the number of correct answers per round.
+            Number of correct items placed per line played.
         </p>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
             {% for stat in preliminary_round_dist %}
@@ -123,6 +123,40 @@
                 <p>No preliminary round data available to generate statistics.</p>
             </div>
             {% endif %}
+        </div>
+    </section>
+
+    <!-- Section: Correct Answers per Player -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Preliminary Round Performance per Player</h2>
+        <p class="text-gray-400 mb-6">
+            The percentage distribution for the total number of correct answers a player achieved across all four preliminary rounds.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+            {% for stat in player_prelim_dist %}
+            <div class="p-4 rounded-xl shadow-lg border border-purple-700 bg-purple-900/50">
+                <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
+                <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
+                <p class="text-xs text-gray-500">({{ stat.count }} players)</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Section: Advancement Rate by Performance -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-4">Advancement Rate by Preliminary Performance</h2>
+        <p class="text-gray-400 mb-6">
+            The percentage of players who advanced to the Fast Line, based on the number of correct answers they had in the preliminary rounds.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+            {% for stat in player_advancement_dist %}
+            <div class="p-4 rounded-xl shadow-lg border border-teal-700 bg-teal-900/50">
+                <p class="font-semibold text-gray-300">{{ stat.correct_count }} Correct</p>
+                <p class="font-bold text-4xl text-{{ stat.pct_color }}-400 mt-1">{{ stat.pct|floatformat:1 }}%</p>
+                <p class="text-xs text-gray-500">({{ stat.advanced_count }} of {{ stat.total_players }})</p>
+            </div>
+            {% endfor %}
         </div>
     </section>
 
