@@ -58,9 +58,6 @@ class CustomUser(AbstractUser):
 
 
 class Game(models.Model):
-    """
-    Represents a single game show episode.
-    """
     air_date = models.DateField()
     episode_number = models.IntegerField(choices=[(1, '1'), (2, '2')])
     episode_title = models.CharField(max_length=255, blank=True)
@@ -71,7 +68,6 @@ class Game(models.Model):
         related_name='submitted_games'
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
-    # This new field will store the podium number of the fast line tie-breaker winner
     fast_line_tiebreaker_winner_podium = models.IntegerField(null=True, blank=True)
 
 
@@ -84,37 +80,22 @@ class Game(models.Model):
 
 
 class Player(models.Model):
-    """
-    Represents a single player's performance in one game.
-    """
     game = models.ForeignKey(Game, related_name='players', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     podium_number = models.IntegerField()
-
-    # Round Results
     round1_correct = models.BooleanField(null=True)
     round2_correct = models.BooleanField(null=True)
     round3_correct = models.BooleanField(null=True)
     round4_correct = models.BooleanField(null=True)
-
-    # Round Scores
     round1_score = models.IntegerField(default=0)
     round2_score = models.IntegerField(default=0)
     round3_score = models.IntegerField(default=0)
     round4_score = models.IntegerField(default=0)
-
-    # Tiebreaker
     won_tiebreaker = models.BooleanField(default=False)
-
-    # Fast Line
     fast_line_correct_count = models.IntegerField(null=True, blank=True)
     fast_line_incorrect_count = models.IntegerField(null=True, blank=True)
-    fast_line_score = models.IntegerField(null=True, blank=True)
-
-    # Final Round
+    fast_line_score = models.IntegerField(null=True, default=None)
     final_round_correct_count = models.IntegerField(null=True, blank=True)
-
-    # Final Winnings
     total_winnings = models.IntegerField(default=0)
 
     def __str__(self):
@@ -125,9 +106,6 @@ class Player(models.Model):
         unique_together = ('game', 'podium_number')
 
 class Syndication(models.Model):
-    """
-    Stores syndication information for the show.
-    """
     state = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
     station = models.CharField(max_length=100)
@@ -138,4 +116,15 @@ class Syndication(models.Model):
 
     class Meta:
         ordering = ['state', 'city']
+
+class StatisticsCache(models.Model):
+    """
+    Stores a pre-calculated JSON blob of all data for the statistics page.
+    """
+    updated_at = models.DateTimeField(auto_now_add=True)
+    through_game = models.ForeignKey(Game, on_delete=models.CASCADE, null=True, blank=True)
+    data = models.JSONField()
+
+    def __str__(self):
+        return f"Statistics Cache updated at {self.updated_at}"
 
