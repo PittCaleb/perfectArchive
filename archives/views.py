@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required, permission_required
@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Avg, Q, Sum, F
 from collections import defaultdict
 from .stats_utils import update_statistics_cache, _calculate_game_outcomes
+from django.urls import reverse
 
 
 # Home page view
@@ -58,6 +59,26 @@ def recent_games_view(request):
     return render(request, 'archives/recent_games.html', {'page_obj': page_obj})
 
 
+# View for Permalink Redirection
+def game_permalink_view(request, game_id):
+    """
+    Finds which page a specific game is on and redirects to it
+    with the correct anchor.
+    """
+    all_game_ids = list(Game.objects.values_list('id', flat=True).order_by('-air_date', '-episode_number'))
+
+    try:
+        index = all_game_ids.index(game_id)
+        page_number = (index // 5) + 1
+
+        # Build the redirect URL
+        redirect_url = f"{reverse('recent_games')}?page={page_number}#game-{game_id}"
+        return redirect(redirect_url)
+    except ValueError:
+        # If game_id is not found, redirect to the first page of recent games
+        return redirect('recent_games')
+
+
 # View for Show Info page
 def show_info_view(request):
     stations = Syndication.objects.all().order_by('state', 'city')
@@ -78,9 +99,6 @@ def show_info_view(request):
 
 # View for Statistics page
 def statistics_view(request):
-    """
-    Retrieves pre-calculated statistics from the cache for fast rendering.
-    """
     cached_stats = StatisticsCache.objects.order_by('-updated_at').first()
     context = {}
 
@@ -106,7 +124,6 @@ def statistics_view(request):
                 if player_obj:
                     player_obj.fast_line_total = p_data.get('fast_line_total')
                     player_obj.round_total = p_data.get('round_total')
-                    player_obj.page_number = p_data.get('page_number')
                     rehydrated_list.append(player_obj)
             return rehydrated_list
 
@@ -117,15 +134,12 @@ def statistics_view(request):
         for podium_lb in context.get('podium_leaderboards', []):
             podium_lb['players'] = rehydrate_players(podium_lb.get('players', []))
 
-        # Efficiently re-hydrate comeback players
-        comeback_player_data = [c.get('player', {}) for c in context.get('top_comebacks', [])]
-        rehydrated_comeback_players = rehydrate_players(comeback_player_data)
-        rehydrated_players_dict = {p.id: p for p in rehydrated_comeback_players}
-
+        # Re-hydrating comebacks requires the player object for the link
         for comeback in context.get('top_comebacks', []):
-            player_id = comeback.get('player', {}).get('id')
-            if player_id in rehydrated_players_dict:
-                comeback['player'] = rehydrated_players_dict[player_id]
+            player_data = comeback.get('player', {})
+            player_id = player_data.get('id')
+            if player_id:
+                comeback['player'] = Player.objects.get(id=player_id)
 
     return render(request, 'archives/statistics.html', context)
 
