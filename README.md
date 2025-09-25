@@ -70,6 +70,8 @@ and paths chosen rather than merely dictated.
 * Syndicated TV broadcast information with state-selectable drop-down
 * Links to Game Show Network, Perfect Line Official and Deborah Norville social media and websites
 
+## New stuff
+* Permalinks added for each episode
 
 
 # ToDo

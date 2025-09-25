@@ -39,8 +39,13 @@
                     <h3 class="text-xl font-bold text-white">{{ latest_game.episode_title }}</h3>
                     <p class="text-sm text-gray-400">{{ latest_game.air_date|date:"F j, Y" }} (Ep. {{ latest_game.episode_number }})</p>
                 </div>
-                <div class="flex-shrink-0 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center whitespace-nowrap">
-                    <span class="text-gray-900 font-bold text-base">Ep. {{ latest_game.id }}</span>
+                <div class="flex items-center space-x-4">
+                    <button class="permalink-btn text-gray-500 hover:text-yellow-400" data-link="{% url 'game_permalink' latest_game.id %}" title="Copy permalink">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l-1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <div class="flex-shrink-0 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center whitespace-nowrap">
+                        <span class="text-gray-900 font-bold text-base">Ep. {{ latest_game.id }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -104,7 +109,11 @@
                 <div class="col-span-1 font-bold text-2xl text-yellow-400">#{{ forloop.counter }}</div>
                 <div class="col-span-4">
                     <p class="font-semibold text-lg text-white">{{ player.name }}</p>
-                    <p class="text-xs text-gray-500">Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}</p>
+                    <p class="text-xs text-gray-500">
+                        <a href="{% url 'game_permalink' player.game.id %}" class="hover:underline" title="View this game">
+                            Ep {{ player.game.id }} - {{ player.game.air_date|date:"n/j/y" }}
+                        </a>
+                    </p>
                 </div>
                 <div class="col-span-3 text-right font-mono text-2xl text-green-400">${{ player.total_winnings|floatformat:0 }}</div>
             </div>
@@ -115,6 +124,36 @@
             {% endfor %}
         </div>
     </section>
+
+    <!-- Clipboard Pop-up -->
+    <div id="clipboard-popup" class="fixed bottom-10 right-10 bg-green-600 text-white py-2 px-4 rounded-lg shadow-lg text-sm transition-opacity duration-300 opacity-0">
+        Link copied to clipboard!
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.permalink-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const link = button.dataset.link;
+                const fullUrl = new URL(link, window.location.origin).href;
+
+                const tempInput = document.createElement('input');
+                tempInput.value = fullUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+
+                const popup = document.getElementById('clipboard-popup');
+                popup.textContent = `Game link copied!`;
+                popup.classList.remove('opacity-0');
+                setTimeout(() => {
+                    popup.classList.add('opacity-0');
+                }, 2000);
+            });
+        });
+    });
+</script>
 {% endblock %}
 
