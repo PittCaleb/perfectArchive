@@ -110,10 +110,11 @@ def update_statistics_cache():
             p1, p2 = advancing_players[0], advancing_players[1]
             p1.round_total = p1.round1_score + p1.round2_score + p1.round3_score + p1.round4_score
             p2.round_total = p2.round1_score + p2.round2_score + p2.round3_score + p2.round4_score
-            leader = p1 if p1.round_total > p2.round_total else p2
-            trailer = p2 if p1.round_total > p2.round_total else p1
-            if leader != trailer and trailer.id in winner_ids:
-                come_from_behind_victories.append({'player': trailer, 'diff': leader.round_total - trailer.round_total})
+
+            if p1.round_total < p2.round_total and p1.id in winner_ids:
+                come_from_behind_victories.append({'player': p1, 'diff': p2.round_total - p1.round_total})
+            elif p2.round_total < p1.round_total and p2.id in winner_ids:
+                come_from_behind_victories.append({'player': p2, 'diff': p1.round_total - p2.round_total})
 
     def color_code_dist(dist_list):
         if not dist_list or not any(
@@ -292,10 +293,11 @@ def update_statistics_cache():
     all_game_ids = list(Game.objects.values_list('id', flat=True).order_by('-air_date', '-episode_number'))
     leaderboard_players = list(top_fast_line_players) + list(top_fast_line_scores) + list(leaderboard_data) + [
         v['player'] for v in top_comebacks]
-    game_ids_to_map = {p.game_id for p in leaderboard_players}
+    game_ids_to_map = {p.game_id for p in leaderboard_players if hasattr(p, 'game_id')}
     game_page_map = {game_id: (all_game_ids.index(game_id) // 5) + 1 for game_id in game_ids_to_map if
                      game_id in all_game_ids}
-    for p in leaderboard_players: p.page_number = game_page_map.get(p.game_id)
+    for p in leaderboard_players:
+        if hasattr(p, 'game_id'): p.page_number = game_page_map.get(p.game_id)
 
     # --- Final Round Performance ---
     final_round_counts = dict(Player.objects.filter(final_round_correct_count__isnull=False).values_list(
@@ -317,7 +319,7 @@ def update_statistics_cache():
         for p in top_players: p.page_number = game_page_map.get(p.game_id)
         podium_leaderboards.append({'podium_number': i, 'players': top_players})
 
-    # Serialize Player objects to IDs for JSON
+    # Serialize Player objects to dicts for JSON
     def serialize_player_list(players):
         return [{'id': p.id, 'name': p.name, 'podium_number': p.podium_number,
                  'game': {'id': p.game.id, 'air_date': p.game.air_date.isoformat()},
@@ -336,10 +338,13 @@ def update_statistics_cache():
         'preliminary_round_dist': preliminary_round_dist,
         'player_prelim_dist': player_prelim_dist,
         'player_advancement_dist': player_advancement_dist,
-        'chart_labels': json.dumps(chart_labels),
-        'correct_data': json.dumps(correct_data),
-        'incorrect_data': json.dumps(incorrect_data),
-        'avg_stats': avg_stats,
+        'chart_labels': chart_labels,
+        'correct_data': correct_data,
+        'incorrect_data': incorrect_data,
+        'avg_stats': {
+            'avg_correct': avg_stats['avg_correct'],
+            'avg_incorrect': avg_stats['avg_incorrect']
+        },
         'top_fast_line_players': serialize_player_list(top_fast_line_players),
         'final_round_stats': final_round_stats,
         'top_fast_line_scores': serialize_player_list(top_fast_line_scores),
