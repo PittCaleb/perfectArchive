@@ -25,6 +25,7 @@ class CustomUserManager(BaseUserManager):
         """Create and save a SuperUser with the given email and password."""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', CustomUser.Role.ADMIN)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -39,6 +40,7 @@ class CustomUser(AbstractUser):
         BASIC = 'BASIC', 'Basic'
         SECONDARY = 'SECONDARY', 'Secondary'
         SCOREKEEPER = 'SCOREKEEPER', 'Scorekeeper'
+        BETA_TESTER = 'BETA_TESTER', 'Beta Tester'
         ADMIN = 'ADMIN', 'Admin'
 
     username = None
@@ -52,7 +54,7 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if not self.pk and not self.role:
             self.role = self.base_role
         return super().save(*args, **kwargs)
 
@@ -70,9 +72,8 @@ class Game(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
     fast_line_tiebreaker_winner_podium = models.IntegerField(null=True, blank=True)
 
-
     def __str__(self):
-        return f"{self.air_date} - {self.episode_title or f'Episode {self.episode_number}'}"
+        return f"Ep {self.id}: {self.episode_title} ({self.air_date})"
 
     class Meta:
         ordering = ['-air_date', '-episode_number']
@@ -105,6 +106,7 @@ class Player(models.Model):
         ordering = ['game', 'podium_number']
         unique_together = ('game', 'podium_number')
 
+
 class Syndication(models.Model):
     state = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
@@ -117,14 +119,51 @@ class Syndication(models.Model):
     class Meta:
         ordering = ['state', 'city']
 
+
 class StatisticsCache(models.Model):
-    """
-    Stores a pre-calculated JSON blob of all data for the statistics page.
-    """
     updated_at = models.DateTimeField(auto_now_add=True)
     through_game = models.ForeignKey(Game, on_delete=models.CASCADE, null=True, blank=True)
     data = models.JSONField()
 
     def __str__(self):
         return f"Statistics Cache updated at {self.updated_at}"
+
+
+class PreliminaryLine(models.Model):
+    """
+    Stores the detailed information for a single preliminary round line.
+    """
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='preliminary_lines')
+    round_number = models.IntegerField()
+    topic = models.CharField(max_length=255)
+    order_description = models.CharField(max_length=255, help_text="e.g., 'Lowest to Highest' or 'West to East'")
+
+    seed_name = models.CharField(max_length=255)
+    seed_value = models.CharField(max_length=100, blank=True, null=True)
+    seed_order = models.IntegerField()
+
+    item1_name = models.CharField(max_length=255)
+    item1_value = models.CharField(max_length=100, blank=True, null=True)
+    item1_order = models.IntegerField()
+
+    item2_name = models.CharField(max_length=255)
+    item2_value = models.CharField(max_length=100, blank=True, null=True)
+    item2_order = models.IntegerField()
+
+    item3_name = models.CharField(max_length=255)
+    item3_value = models.CharField(max_length=100, blank=True, null=True)
+    item3_order = models.IntegerField()
+
+    item4_name = models.CharField(max_length=255)
+    item4_value = models.CharField(max_length=100, blank=True, null=True)
+    item4_order = models.IntegerField()
+
+    episode_correct_count = models.IntegerField()
+
+    def __str__(self):
+        return f"Game {self.game.id}, Round {self.round_number}: {self.topic}"
+
+    class Meta:
+        ordering = ['game', 'round_number']
+        unique_together = ('game', 'round_number')
 

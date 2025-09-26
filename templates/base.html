@@ -12,7 +12,6 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-ZWCC724JY9');
     </script>
 
@@ -54,8 +53,12 @@
                             <a href="{% url 'analysis' %}" class="{% if request.resolver_match.url_name == 'analysis' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Analysis</a>
                             <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Show Info</a>
                             <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">About</a>
-                             {% if perms.archives.add_game %}
-                                <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Score a Game</a>
+                            {% if user.is_authenticated and user.role == 'BETA_TESTER' or user.is_superuser %}
+                                <a href="{% url 'gameplay:play' %}" class="{% if request.resolver_match.url_name == 'gameplay:play' %}bg-gray-900 text-green-300{% else %}text-green-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Play</a>
+                            {% endif %}
+                            {% if perms.archives.add_game %}
+                                <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Score Game</a>
+                                <a href="{% url 'add_line' %}" class="{% if request.resolver_match.url_name == 'add_line' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Add Line</a>
                             {% endif %}
                         </div>
                     </div>
@@ -64,7 +67,6 @@
                 <div class="hidden md:block">
                     <div class="ml-4 flex items-center md:ml-6">
                         {% if user.is_authenticated %}
-                            <span class="text-gray-400 text-sm mr-4">Welcome, {{ user.email }}</span>
                              {% if user.is_staff %}
                                 <a href="/perfect/perfect-admin/" class="bg-gray-700 text-white hover:bg-gray-600 rounded-md px-3 py-2 text-sm font-medium">Admin</a>
                             {% endif %}
@@ -79,14 +81,8 @@
                 <div class="-mr-2 flex md:hidden">
                     <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800" aria-controls="mobile-menu" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
-                        <!-- Hamburger icon -->
-                        <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg>
-                        <!-- Close icon (hidden by default) -->
-                        <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                        <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
             </div>
@@ -100,17 +96,16 @@
                 <a href="{% url 'analysis' %}" class="{% if request.resolver_match.url_name == 'analysis' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Analysis</a>
                 <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Show Info</a>
                 <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">About</a>
+                {% if user.is_authenticated and user.role == 'BETA_TESTER' or user.is_superuser %}
+                    <a href="{% url 'gameplay:play' %}" class="{% if request.resolver_match.url_name == 'gameplay:play' %}bg-gray-900 text-green-300{% else %}text-green-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Play</a>
+                {% endif %}
                 {% if perms.archives.add_game %}
-                    <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Score a Game</a>
+                    <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Score Game</a>
+                    <a href="{% url 'add_line' %}" class="{% if request.resolver_match.url_name == 'add_line' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Add Line</a>
                 {% endif %}
             </div>
             <div class="border-t border-gray-700 pb-3 pt-4">
                  {% if user.is_authenticated %}
-                <div class="flex items-center px-5">
-                    <div class="ml-3">
-                        <div class="text-base font-medium leading-none text-white">{{ user.email }}</div>
-                    </div>
-                </div>
                 <div class="mt-3 space-y-1 px-2">
                     {% if user.is_staff %}
                         <a href="/perfect/perfect-admin/" class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Admin</a>
@@ -142,7 +137,7 @@
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.012-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 016.08 2.525c.636-.247 1.363-.416 2.427-.465C9.53 2.013 9.884 2 12.315 2zM12 7.044a5.271 5.271 0 00-5.271 5.271A5.271 5.271 0 0012 17.585a5.271 5.271 0 005.271-5.271A5.271 5.271 0 0012 7.044zm0 8.518a3.247 3.247 0 110-6.494 3.247 3.247 0 010 6.494zM16.338 7.044a1.265 1.265 0 100 2.53 1.265 1.265 0 000-2.53z" clip-rule="evenodd"></path></svg>
                 </a>
             </div>
-            <p class="text-xs text-gray-500 mt-6">&copy; 2025 The Perfect Line Archive. All Rights Reserved.</p>
+            <p class="text-xs text-gray-500 mt-6">&copy; 2025 The Perfect Line Archive. <a href="{% url 'login' %}" class="text-gray-500">All</a> Rights Reserved.</p>
         </div>
     </footer>
 

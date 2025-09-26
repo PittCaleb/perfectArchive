@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Beta Test Area - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4">
+    <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Beta Test Area</h1>
+        <p class="text-md md:text-lg text-gray-400 mt-2">Welcome, Beta Testers!</p>
+    </header>
+
+    <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700 space-y-6 text-gray-300 leading-relaxed mb-12">
+        <p>
+            We are currently developing a way for fans to experience The Perfect Line gameplay directly on this site. Our goal is to create modes for you to play the Preliminary Rounds, the Fast Line, and the Final Line, either individually, against an AI opponent, or against other players in a shared online session.
+        </p>
+        <p>
+            The rollout of these features will be slow and methodical. Eventually, visitors should be able to play individual game elements or a full game from start to finish, complete with multiple leaderboards to track performance. We appreciate your patience and your invaluable feedback as we develop these new gameplay elements.
+        </p>
+        <p>
+            If you observe anything amiss or have a feature request, please email us at <a href="mailto:beta@theperfectline.info" class="text-yellow-400 font-semibold hover:underline">beta@theperfectline.info</a>. If you would like to nominate someone to join the beta test, please forward their email to the same address.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Preliminary Rounds Column -->
+        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+            <h3 class="text-xl font-bold text-white mb-4 text-center">Preliminary Rounds</h3>
+            <div class="space-y-3">
+                <a href="{% url 'gameplay:prelim_game' %}?style=solo" class="block w-full text-center py-2 rounded-md font-medium bg-blue-600 text-white hover:bg-blue-700">Single Player</a>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">vs. AI</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">vs. Human</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">Leaderboard</button>
+            </div>
+        </div>
+
+        <!-- Fast Line Column -->
+        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+            <h3 class="text-xl font-bold text-white mb-4 text-center">Fast Line</h3>
+            <div class="space-y-3">
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">Single Player</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">vs. AI</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">vs. Human</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">Leaderboard</button>
+            </div>
+        </div>
+
+        <!-- Final Line Column -->
+        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+            <h3 class="text-xl font-bold text-white mb-4 text-center">Final Line</h3>
+            <div class="space-y-3">
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">Single Player</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">vs. AI</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">vs. Human</button>
+                <button disabled class="w-full py-2 rounded-md font-medium bg-gray-600 text-gray-400 cursor-not-allowed">Leaderboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

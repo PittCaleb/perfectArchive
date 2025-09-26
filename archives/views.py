@@ -1,14 +1,67 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required, permission_required
-from .models import Game, Player, CustomUser, Syndication, StatisticsCache
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
+from .models import Game, Player, CustomUser, Syndication, StatisticsCache, PreliminaryLine
 import json
 from django.core.paginator import Paginator
 from django.db.models import Count, Avg, Q, Sum, F
 from collections import defaultdict
-from .stats_utils import update_statistics_cache, _calculate_game_outcomes
+from .stats_utils import update_statistics_cache
+from .forms import PreliminaryLineForm
 from django.urls import reverse
+from django.contrib import messages
+
+
+def _calculate_game_outcomes(game):
+    """
+    Helper function to determine advancing players and winners for a given game.
+    This avoids duplicating logic across multiple views.
+    """
+    players = list(game.players.all())
+    if not players:
+        return [], []
+
+    for p in players:
+        p.round_total = p.round1_score + p.round2_score + p.round3_score + p.round4_score
+
+    players.sort(key=lambda p: p.round_total, reverse=True)
+
+    # Determine advancing players from round 1-4
+    advancing_ids = []
+    if len(players) > 0 and players[0].round_total >= 0:
+        advancing_ids.append(players[0].id)
+
+    tiebreaker_winner = next((p for p in players if p.won_tiebreaker), None)
+    if tiebreaker_winner:
+        if tiebreaker_winner.id not in advancing_ids:
+            advancing_ids.append(tiebreaker_winner.id)
+    elif len(players) > 1 and players[1].round_total >= 0:
+        if players[1].id not in advancing_ids:
+            advancing_ids.append(players[1].id)
+
+    # Determine the final winner(s)
+    winner_ids = []
+    advancing_players = [p for p in players if p.id in advancing_ids]
+
+    # Check for a fast line tie-breaker first
+    if game.fast_line_tiebreaker_winner_podium is not None:
+        winner_player = next(
+            (p for p in advancing_players if p.podium_number == game.fast_line_tiebreaker_winner_podium), None)
+        if winner_player:
+            winner_ids.append(winner_player.id)
+    else:
+        # If no tie-breaker, determine winner by highest score
+        max_fast_line_total = -1
+        for p in advancing_players:
+            p.fast_line_total = p.round_total + (p.fast_line_score or 0)
+            if p.fast_line_total > max_fast_line_total:
+                max_fast_line_total = p.fast_line_total
+
+        if max_fast_line_total >= 0:
+            winner_ids = [p.id for p in advancing_players if p.fast_line_total == max_fast_line_total]
+
+    return advancing_ids, winner_ids
 
 
 # Home page view
@@ -61,21 +114,15 @@ def recent_games_view(request):
 
 # View for Permalink Redirection
 def game_permalink_view(request, game_id):
-    """
-    Finds which page a specific game is on and redirects to it
-    with the correct anchor.
-    """
     all_game_ids = list(Game.objects.values_list('id', flat=True).order_by('-air_date', '-episode_number'))
 
     try:
         index = all_game_ids.index(game_id)
         page_number = (index // 5) + 1
 
-        # Build the redirect URL
         redirect_url = f"{reverse('recent_games')}?page={page_number}#game-{game_id}"
         return redirect(redirect_url)
     except ValueError:
-        # If game_id is not found, redirect to the first page of recent games
         return redirect('recent_games')
 
 
@@ -124,6 +171,7 @@ def statistics_view(request):
                 if player_obj:
                     player_obj.fast_line_total = p_data.get('fast_line_total')
                     player_obj.round_total = p_data.get('round_total')
+                    player_obj.page_number = p_data.get('page_number')
                     rehydrated_list.append(player_obj)
             return rehydrated_list
 
@@ -152,6 +200,71 @@ def analysis_view(request):
 # View for About page
 def about_view(request):
     return render(request, 'archives/about.html')
+
+
+# Helper function and view for the new Beta Test page
+def is_beta_tester(user):
+    return user.is_authenticated and user.role == CustomUser.Role.BETA_TESTER
+
+def is_beta_tester_or_superuser(user):
+    return user.is_authenticated and (user.role == CustomUser.Role.BETA_TESTER or user.is_superuser)
+
+@user_passes_test(is_beta_tester_or_superuser)
+def play_view(request):
+    return render(request, 'archives/play.html')
+
+
+@login_required
+@permission_required('archives.add_game', raise_exception=True)
+def add_preliminary_line_view(request):
+    if request.method == 'POST':
+        form = PreliminaryLineForm(request.POST)
+        if form.is_valid():
+            instance = form.save()
+            messages.success(request,
+                             f"Successfully added line for Game {instance.game.id}, Round {instance.round_number}.")
+
+            # Smart redirect logic
+            next_game_id = instance.game.id
+            next_round_number = instance.round_number + 1
+            if instance.round_number == 4:
+                next_game_id += 1
+                next_round_number = 1
+
+            redirect_url = f"{reverse('add_line')}?game={next_game_id}&round_number={next_round_number}"
+            return redirect(redirect_url)
+    else:
+        initial_data = {
+            'game': request.GET.get('game'),
+            'round_number': request.GET.get('round_number')
+        }
+        form = PreliminaryLineForm(initial=initial_data)
+
+    # If no initial data is provided via GET, determine the next logical entry
+    if not request.GET.get('game'):
+        last_line = PreliminaryLine.objects.order_by('-game__id', '-round_number').first()
+        if last_line:
+            next_game = last_line.game
+            next_round = last_line.round_number + 1
+            if next_round > 4:
+                next_round = 1
+                # Find the next game ID in sequence
+                next_game_obj = Game.objects.filter(id__gt=next_game.id).order_by('id').first()
+                if next_game_obj:
+                    next_game = next_game_obj
+                else:  # Or just increment if there's a gap
+                    next_game = Game.objects.get(id=next_game.id + 1)
+
+            form.initial['game'] = next_game
+            form.initial['round_number'] = next_round
+        else:
+            # First ever entry, default to first game
+            first_game = Game.objects.order_by('id').first()
+            if first_game:
+                form.initial['game'] = first_game
+                form.initial['round_number'] = 1
+
+    return render(request, 'archives/add_preliminary_line.html', {'form': form})
 
 
 # API Endpoint

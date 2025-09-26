@@ -71,9 +71,24 @@ and paths chosen rather than merely dictated.
 * Links to Game Show Network, Perfect Line Official and Deborah Norville social media and websites
 
 ## New stuff
-* Permalinks added for each episode
+* Permalinks added for each episode for easier sharing on social media
 
 
 # ToDo
+## Play Game
+### Admin
+* enter perfect line
+* enter fast line
+* enter final line
+### Game Play
+* Play single player perfect line
+* Play single player fast line
+* Play final line
+* Play 2-player perfect line
+* Play 2-player fast line
+* Play 4-player perfect line
+* Play against computer perfect line
+* Leaderboards
+## Genral
 * Bug on save for tie after fast line
 * Tied games stats (# ties in after 4, # ties for victory)
