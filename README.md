@@ -75,13 +75,16 @@ and paths chosen rather than merely dictated.
 
 
 # ToDo
+
 ## Play Game
+
 ### Admin
-* enter perfect line
 * enter fast line
 * enter final line
+
 ### Game Play
 * Play single player perfect line
+* * Add sound
 * Play single player fast line
 * Play final line
 * Play 2-player perfect line
@@ -89,6 +92,8 @@ and paths chosen rather than merely dictated.
 * Play 4-player perfect line
 * Play against computer perfect line
 * Leaderboards
+* daily, weekly, monthly
+
 ## Genral
 * Bug on save for tie after fast line
 * Tied games stats (# ties in after 4, # ties for victory)

@@ -3,54 +3,56 @@
 {% block title %}Play Preliminary Round - Perfect Line Archives{% endblock %}
 
 {% block content %}
+<!-- Tone.js for sound effects -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
 <div class="max-w-6xl mx-auto px-4 text-white">
     <div id="game-container">
         <!-- Game Header -->
-        <header class="text-center mb-6">
-            <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700">
+        <header class="text-center mb-2">
+            <div class="flex justify-between items-center bg-gray-800 p-3 rounded-xl border border-gray-700">
                 <div>
-                    <p class="text-lg text-gray-400">Game #<span id="game-id-display"></span></p>
-                    <h1 class="text-3xl font-bold">Round <span id="round-number-display"></span></h1>
+                    <p class="text-base text-gray-400">Game #<span id="game-id-display"></span></p>
+                    <h1 class="text-2xl font-bold">Round <span id="round-number-display"></span></h1>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-400">Line Value</p>
-                    <p id="round-value-display" class="text-2xl font-bold text-yellow-400"></p>
+                    <p class="text-xs text-gray-400">Line Value</p>
+                    <p id="round-value-display" class="text-xl font-bold text-yellow-400"></p>
                 </div>
             </div>
-            <div class="mt-4">
-                <h2 id="topic-display" class="text-xl font-semibold"></h2>
-                <p id="order-desc-display" class="text-sm text-gray-400"></p>
+            <div class="mt-3">
+                <h2 id="topic-display" class="text-lg font-semibold"></h2>
+                <p id="order-desc-display" class="text-xs text-gray-400"></p>
             </div>
         </header>
 
         <!-- The Line -->
-        <main id="line-container" class="flex justify-center items-center space-x-2 bg-gray-900/50 p-4 rounded-lg min-h-[12rem] overflow-x-auto"></main>
+        <main id="line-container" class="flex justify-center items-center space-x-2 bg-gray-900/50 p-4 rounded-lg min-h-[8rem] overflow-x-auto"></main>
 
         <!-- Round Result Info -->
-        <div id="round-result-info" class="text-center text-gray-400 mt-4 text-sm italic hidden"></div>
+        <div id="round-result-info" class="text-center text-gray-400 mt-3 text-sm italic hidden"></div>
 
         <!-- Player's Item to Place -->
-        <div id="player-item-container" class="mt-8 flex flex-col items-center">
-            <p class="text-gray-400 mb-2">Your item to place:</p>
+        <div id="player-item-container" class="mt-3 flex flex-col items-center">
+            <p class="text-gray-400 mb-2 text-sm">Your item to place:</p>
             <div id="movable-item-wrapper"></div>
         </div>
 
         <!-- Controls -->
-        <div class="text-center mt-8">
-            <button id="submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">Submit Placement</button>
-            <button id="next-round-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg">Play Next Round</button>
+        <div class="text-center mt-3">
+            <button id="next-round-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-base">Play Next Round</button>
         </div>
 
         <!-- Score Display -->
-        <div class="mt-8 text-center">
-             <div class="bg-gray-800 inline-block p-4 rounded-xl border border-gray-700">
-                <p class="text-sm text-gray-400">Round Score</p>
-                <p class="text-3xl font-bold text-white"><span id="round-correct-display">0</span> / 4</p>
-                <p class="text-lg font-mono text-yellow-400" id="round-winnings-display">$0</p>
+        <div class="mt-3 text-center">
+             <div class="bg-gray-800 inline-block p-3 rounded-xl border border-gray-700">
+                <p class="text-xs text-gray-400">Round Score</p>
+                <p class="text-2xl font-bold text-white"><span id="round-correct-display">0</span> / 4</p>
+                <p class="text-base font-mono text-yellow-400" id="round-winnings-display">$0</p>
             </div>
-             <div class="bg-gray-800 inline-block p-4 rounded-xl border border-gray-700 ml-4">
-                <p class="text-sm text-gray-400">Total Winnings</p>
-                <p class="text-3xl font-bold text-green-400" id="total-winnings-display">$0</p>
+             <div class="bg-gray-800 inline-block p-3 rounded-xl border border-gray-700 ml-4">
+                <p class="text-xs text-gray-400">Total Winnings</p>
+                <p class="text-2xl font-bold text-green-400" id="total-winnings-display">$0</p>
             </div>
         </div>
     </div>
@@ -63,6 +65,37 @@
             <p class="text-xl text-gray-300">Total Winnings</p>
             <p id="final-total-winnings" class="text-6xl font-bold text-green-400 my-2"></p>
         </div>
+
+        <!-- Leaderboard Section -->
+        <div id="leaderboard-section" class="mt-12 max-w-lg mx-auto">
+            <h2 class="text-2xl font-bold mb-4">Leaderboards (Preliminary Round - Solo)</h2>
+            <!-- Tabs -->
+            <div class="mb-4 border-b border-gray-700">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-yellow-400 border-yellow-400" data-tab="daily">Daily</button>
+                    <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-gray-200 hover:border-gray-500" data-tab="weekly">Weekly</button>
+                    <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-gray-200 hover:border-gray-500" data-tab="monthly">Monthly</button>
+                </nav>
+            </div>
+
+            <!-- Tab Panels -->
+            <div id="leaderboard-panels">
+                <div id="daily-panel" class="tab-panel">{% include "gameplay/leaderboard_table.html" with scores=daily_scores type="daily" %}</div>
+                <div id="weekly-panel" class="tab-panel hidden">{% include "gameplay/leaderboard_table.html" with scores=weekly_scores type="weekly" %}</div>
+                <div id="monthly-panel" class="tab-panel hidden">{% include "gameplay/leaderboard_table.html" with scores=monthly_scores type="monthly" %}</div>
+            </div>
+
+            <!-- Name Entry Form -->
+            <div id="name-entry-container" class="hidden mt-6 bg-gray-900/50 p-4 rounded-lg">
+                <p class="text-green-400 font-semibold mb-2">You made the leaderboard!</p>
+                <div class="flex space-x-2">
+                    <input type="text" id="leaderboard-name-input" placeholder="Enter your name" class="flex-grow bg-gray-700 border border-gray-600 rounded-md p-2 text-white">
+                    <button id="submit-score-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Submit</button>
+                </div>
+                <p id="submit-status" class="text-xs text-gray-500 mt-2 h-4"></p>
+            </div>
+        </div>
+
         <div class="mt-8">
             <button id="play-again-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg text-lg">Play Another Game</button>
         </div>
@@ -74,8 +107,8 @@
         width: 120px;
         min-width: 120px;
         height: 100px;
-        background-color: #1f2937; /* gray-800 */
-        border: 2px solid #374151; /* gray-700 */
+        background-color: #1f2937;
+        border: 2px solid #374151;
         border-radius: 0.5rem;
         display: flex;
         flex-direction: column;
@@ -94,23 +127,23 @@
     .item-value {
         font-size: 0.75rem;
         line-height: 1rem;
-        color: #9ca3af; /* gray-400 */
+        color: #9ca3af;
     }
     .drop-zone {
         height: 100px;
-        border: 2px dashed #4b5563; /* gray-600 */
+        border: 2px dashed #4b5563;
         border-radius: 0.5rem;
         transition: all 0.2s ease;
         width: 30px;
         min-width: 30px;
     }
     .drop-zone.drag-over {
-        background-color: #374151; /* gray-700 */
+        background-color: #374151;
         width: 120px;
         min-width: 120px;
     }
     .movable {
-        border-color: #3b82f6; /* blue-500 */
+        border-color: #3b82f6;
         cursor: grab;
     }
     .movable:active {
@@ -119,10 +152,10 @@
         transform: scale(1.05);
     }
     .correct {
-        border-color: #10b981; /* emerald-500 */
+        border-color: #10b981;
     }
     .incorrect {
-        border-color: #ef4444; /* red-500 */
+        border-color: #ef4444;
     }
 </style>
 
@@ -137,6 +170,18 @@
             return;
         }
 
+        let audioInitialized = false;
+        let successSynth, failureSynth;
+
+        function initAudio() {
+            if (audioInitialized || !window.Tone) return;
+            Tone.start();
+            successSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+            failureSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+            audioInitialized = true;
+        }
+        gameContainer.addEventListener('click', initAudio, { once: true });
+
         const ROUND_VALUES = { 1: 2400, 2: 3000, 3: 3600, 4: 4200 };
         let currentRound = 1;
         let currentItemIndex = 1;
@@ -147,10 +192,13 @@
 
         const lineContainer = document.getElementById('line-container');
         const movableItemWrapper = document.getElementById('movable-item-wrapper');
-        const submitBtn = document.getElementById('submit-btn');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const playAgainBtn = document.getElementById('play-again-btn');
         const roundResultInfo = document.getElementById('round-result-info');
+        const submitScoreBtn = document.getElementById('submit-score-btn');
+        const nameInput = document.getElementById('leaderboard-name-input');
+        const statusEl = document.getElementById('submit-status');
+        const leaderboardPanels = document.getElementById('leaderboard-panels');
 
         function createItemBox(item, isMovable = false, showValue = true) {
             const box = document.createElement('div');
@@ -178,21 +226,15 @@
         function renderLine(itemsOnLine, isFinal = false) {
             lineContainer.innerHTML = '';
             const fragment = document.createDocumentFragment();
-            if (!isFinal) {
-                fragment.appendChild(createDropZone());
-            }
+            if (!isFinal) fragment.appendChild(createDropZone());
             itemsOnLine.forEach(item => {
                 const box = createItemBox(item, false, true);
-                if (item.isCorrect === false) box.classList.add('incorrect'); // Keep incorrect red
+                if (item.isCorrect === false) box.classList.add('incorrect');
                 fragment.appendChild(box);
-                if (!isFinal) {
-                    fragment.appendChild(createDropZone());
-                }
+                if (!isFinal) fragment.appendChild(createDropZone());
             });
             lineContainer.appendChild(fragment);
-            if (!isFinal) {
-                addDropZoneListeners();
-            }
+            if (!isFinal) addDropZoneListeners();
         }
 
         function loadNextItem() {
@@ -204,7 +246,6 @@
                 addDragListeners();
             } else {
                 movableItemWrapper.innerHTML = '';
-                submitBtn.classList.add('hidden');
                 totalWinnings += roundWinnings;
                 document.getElementById('total-winnings-display').textContent = `$${Math.round(totalWinnings)}`;
 
@@ -223,7 +264,18 @@
         function showFinalScore() {
             gameContainer.classList.add('hidden');
             finalScoreContainer.classList.remove('hidden');
-            document.getElementById('final-total-winnings').textContent = `$${Math.round(totalWinnings)}`;
+            const finalScore = Math.round(totalWinnings);
+            document.getElementById('final-total-winnings').textContent = `$${finalScore}`;
+
+            document.getElementById('player-score-daily').textContent = `$${finalScore}`;
+            document.getElementById('player-score-weekly').textContent = `$${finalScore}`;
+            document.getElementById('player-score-monthly').textContent = `$${finalScore}`;
+
+            checkLeaderboards(finalScore);
+            const savedName = getCookie('leaderboardName');
+            if (savedName) {
+                nameInput.value = savedName;
+            }
         }
 
         function checkPlacement(placedItem) {
@@ -246,15 +298,16 @@
 
             if (isCorrect) {
                 placedItem.classList.add('correct');
+                if (successSynth) successSynth.triggerAttackRelease("C5", "8n");
                 itemData.isCorrect = true;
                 roundCorrect++;
                 roundWinnings += ROUND_VALUES[currentRound] / 4;
             } else {
                 placedItem.classList.add('incorrect');
+                if (failureSynth) failureSynth.triggerAttackRelease("A2", "8n");
                 itemData.isCorrect = false;
             }
 
-            // Update score display immediately after every turn
             document.getElementById('round-correct-display').textContent = roundCorrect;
             document.getElementById('round-winnings-display').textContent = `$${Math.round(roundWinnings)}`;
 
@@ -289,16 +342,16 @@
 
             renderLine(lineItems);
             loadNextItem();
-
-            submitBtn.classList.remove('hidden');
-            submitBtn.disabled = true;
             nextRoundBtn.classList.add('hidden');
         }
 
         function addDragListeners() {
             const movable = document.getElementById('movable-item');
             if (!movable) return;
-            movable.addEventListener('dragstart', () => movable.classList.add('opacity-50'));
+            movable.addEventListener('dragstart', () => {
+                initAudio();
+                movable.classList.add('opacity-50');
+            });
             movable.addEventListener('dragend', () => movable.classList.remove('opacity-50'));
         }
 
@@ -312,18 +365,11 @@
                     const movable = document.getElementById('movable-item');
                     if (movable) {
                         zone.replaceWith(movable);
-                        submitBtn.disabled = false;
+                        processTurn(checkPlacement(movable), movable);
                     }
                 });
             });
         }
-
-        submitBtn.addEventListener('click', () => {
-            const placedItem = document.getElementById('movable-item');
-            if (!placedItem) return;
-            submitBtn.disabled = true;
-            processTurn(checkPlacement(placedItem), placedItem);
-        });
 
         nextRoundBtn.addEventListener('click', () => {
             currentRound++;
@@ -331,6 +377,127 @@
         });
 
         playAgainBtn.addEventListener('click', () => window.location.reload());
+
+        // --- Leaderboard Logic ---
+        function checkLeaderboards(playerScore) {
+            const dailyScores = [{% for score in daily_scores %}{{ score.score }},{% endfor %}];
+            const weeklyScores = [{% for score in weekly_scores %}{{ score.score }},{% endfor %}];
+            const monthlyScores = [{% for score in monthly_scores %}{{ score.score }},{% endfor %}];
+
+            const madeDaily = dailyScores.length < 10 || playerScore > dailyScores[dailyScores.length - 1];
+            const madeWeekly = weeklyScores.length < 10 || playerScore > weeklyScores[weeklyScores.length - 1];
+            const madeMonthly = monthlyScores.length < 10 || playerScore > monthlyScores[monthlyScores.length - 1];
+
+            if (madeDaily || madeWeekly || madeMonthly) {
+                document.getElementById('name-entry-container').classList.remove('hidden');
+            }
+        }
+
+        async function refreshLeaderboards() {
+            try {
+                const response = await fetch("{% url 'gameplay:get_leaderboard_api' %}?game_type=prelim&play_type=solo");
+                if (!response.ok) throw new Error('Failed to fetch leaderboards.');
+                const data = await response.json();
+
+                leaderboardPanels.innerHTML = `
+                    <div id="daily-panel" class="tab-panel">${data.daily_html}</div>
+                    <div id="weekly-panel" class="tab-panel hidden">${data.weekly_html}</div>
+                    <div id="monthly-panel" class="tab-panel hidden">${data.monthly_html}</div>
+                `;
+                setupTabListeners();
+                document.querySelector('.tab-btn[data-tab="daily"]').click(); // Show the daily tab
+
+                const finalScore = Math.round(totalWinnings);
+                document.getElementById('player-score-daily').textContent = `$${finalScore}`;
+                document.getElementById('player-score-weekly').textContent = `$${finalScore}`;
+                document.getElementById('player-score-monthly').textContent = `$${finalScore}`;
+
+            } catch (error) {
+                console.error("Error refreshing leaderboards:", error);
+            }
+        }
+
+        submitScoreBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('Please enter a name.');
+                return;
+            }
+            setCookie('leaderboardName', name, 365);
+
+            const scoreData = {
+                name: name,
+                score: Math.round(totalWinnings),
+                game_type: 'prelim',
+                play_type: 'solo',
+                game_id: gameData.gameId
+            };
+
+            submitScoreBtn.disabled = true;
+            statusEl.textContent = "Submitting...";
+
+            fetch("{% url 'gameplay:save_score_api' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify(scoreData)
+            })
+            .then(response => {
+                if (!response.ok) { return response.json().then(err => { throw new Error(err.message) }); }
+                return response.json();
+            })
+            .then(data => {
+                statusEl.textContent = "Score Submitted!";
+                statusEl.classList.remove('text-red-400');
+                statusEl.classList.add('text-green-400');
+                document.getElementById('name-entry-container').classList.add('hidden');
+                refreshLeaderboards();
+            })
+            .catch(error => {
+                statusEl.textContent = `Error: ${error.message}`;
+                statusEl.classList.remove('text-green-400');
+                statusEl.classList.add('text-red-400');
+                submitScoreBtn.disabled = false;
+            });
+        });
+
+        function setupTabListeners() {
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+                    document.getElementById(`${tabId}-panel`).classList.remove('hidden');
+
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove('text-yellow-400', 'border-yellow-400');
+                        btn.classList.add('text-gray-400', 'hover:text-gray-200', 'hover:border-gray-500');
+                    });
+                    button.classList.add('text-yellow-400', 'border-yellow-400');
+                    button.classList.remove('text-gray-400', 'hover:text-gray-200', 'hover:border-gray-500');
+                });
+            });
+        }
+
+        setupTabListeners();
+
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax";
+        }
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i=0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+            }
+            return null;
+        }
 
         initRound();
     });

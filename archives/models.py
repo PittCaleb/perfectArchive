@@ -130,9 +130,6 @@ class StatisticsCache(models.Model):
 
 
 class PreliminaryLine(models.Model):
-    """
-    Stores the detailed information for a single preliminary round line.
-    """
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='preliminary_lines')
     round_number = models.IntegerField()
     topic = models.CharField(max_length=255)
@@ -166,4 +163,25 @@ class PreliminaryLine(models.Model):
     class Meta:
         ordering = ['game', 'round_number']
         unique_together = ('game', 'round_number')
+
+
+class Leaderboard(models.Model):
+    """
+    Stores scores from the playable games.
+    """
+    GAME_TYPE_CHOICES = [('prelim', 'Preliminary'), ('fast', 'Fast Line'), ('final', 'Final Line')]
+    PLAY_TYPE_CHOICES = [('solo', 'Solo'), ('ai', 'vs. AI'), ('multi', 'Multiplayer')]
+
+    game_type = models.CharField(max_length=10, choices=GAME_TYPE_CHOICES)
+    play_type = models.CharField(max_length=10, choices=PLAY_TYPE_CHOICES)
+    name = models.CharField(max_length=100)
+    score = models.IntegerField()
+    game_played = models.ForeignKey(Game, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - ${self.score} ({self.get_game_type_display()} {self.get_play_type_display()})"
+
+    class Meta:
+        ordering = ['-score']
 
