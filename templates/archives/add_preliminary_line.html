@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load archives_extras %}
+
+{% block title %}Add Preliminary Line - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4">
+    <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Add Preliminary Line</h1>
+        <p class="text-md md:text-lg text-gray-400 mt-2">Enter the details for a single preliminary round.</p>
+    </header>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="bg-green-800 border border-green-600 text-green-200 px-4 py-3 rounded-lg relative" role="alert">
+            <span class="block sm:inline">{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" class="bg-gray-800 rounded-2xl p-6 border border-gray-700 space-y-8">
+        {% csrf_token %}
+
+        <!-- Top Section: Game, Round, Topic -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label for="{{ form.game.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">Game</label>
+                {{ form.game }}
+            </div>
+            <div>
+                <label for="{{ form.round_number.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">Round</label>
+                {{ form.round_number }}
+            </div>
+            <div>
+                <label for="{{ form.episode_correct_count.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1"># Correct on Show</label>
+                {{ form.episode_correct_count }}
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div>
+                <label for="{{ form.topic.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">Topic</label>
+                {{ form.topic }}
+            </div>
+             <div>
+                <label for="{{ form.order_description.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">Order Description</label>
+                {{ form.order_description }}
+            </div>
+        </div>
+
+        <!-- Seed Item -->
+        <div class="border-t border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-yellow-400 mb-4">Seed Item</h3>
+            <div class="grid grid-cols-1 md:grid-cols-8 gap-4">
+                <div class="md:col-span-4">
+                    <label for="{{ form.seed_name.id_for_label }}" class="block text-xs font-medium text-gray-400 mb-1">Name</label>
+                    {{ form.seed_name }}
+                </div>
+                <div class="md:col-span-2">
+                    <label for="{{ form.seed_value.id_for_label }}" class="block text-xs font-medium text-gray-400 mb-1">Value (Optional)</label>
+                    {{ form.seed_value }}
+                </div>
+                <div class="md:col-span-2">
+                    <label for="{{ form.seed_order.id_for_label }}" class="block text-xs font-medium text-gray-400 mb-1">Correct Order</label>
+                    {{ form.seed_order }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Items -->
+        {% for i in "1234" %}
+        <div class="border-t border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-200 mb-4">Item for Player in Turn Position {{ i }}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-8 gap-4">
+                <div class="md:col-span-4">
+                    <label for="id_item{{ i }}_name" class="block text-xs font-medium text-gray-400 mb-1">Name</label>
+                    {% with field_name="item"|add:i|add:"_name" %}
+                        {{ form|get_item:field_name }}
+                    {% endwith %}
+                </div>
+                <div class="md:col-span-2">
+                    <label for="id_item{{ i }}_value" class="block text-xs font-medium text-gray-400 mb-1">Value (Optional)</label>
+                    {% with field_name="item"|add:i|add:"_value" %}
+                        {{ form|get_item:field_name }}
+                    {% endwith %}
+                </div>
+                <div class="md:col-span-2">
+                    <label for="id_item{{ i }}_order" class="block text-xs font-medium text-gray-400 mb-1">Correct Order</label>
+                    {% with field_name="item"|add:i|add:"_order" %}
+                        {{ form|get_item:field_name }}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="pt-6 text-center">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">Save and Add Next Line</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    input, select {
+        background-color: #374151;
+        border: 1px solid #4b5563;
+        color: #d1d5db;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        width: 100%;
+    }
+</style>
+
+{% endblock %}
+

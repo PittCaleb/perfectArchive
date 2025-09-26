@@ -1,0 +1,2 @@
+# This file tells Python to treat the 'templatetags' directory as a package.
+# It should remain empty.

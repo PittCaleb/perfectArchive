@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}Play Preliminary Round - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 text-white">
+    <div id="game-container">
+        <!-- Game Header -->
+        <header class="text-center mb-6">
+            <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div>
+                    <p class="text-lg text-gray-400">Game #<span id="game-id-display"></span></p>
+                    <h1 class="text-3xl font-bold">Round <span id="round-number-display"></span></h1>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">Line Value</p>
+                    <p id="round-value-display" class="text-2xl font-bold text-yellow-400"></p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h2 id="topic-display" class="text-xl font-semibold"></h2>
+                <p id="order-desc-display" class="text-sm text-gray-400"></p>
+            </div>
+        </header>
+
+        <!-- The Line -->
+        <main id="line-container" class="flex justify-center items-center space-x-2 bg-gray-900/50 p-4 rounded-lg min-h-[12rem] overflow-x-auto"></main>
+
+        <!-- Round Result Info -->
+        <div id="round-result-info" class="text-center text-gray-400 mt-4 text-sm italic hidden"></div>
+
+        <!-- Player's Item to Place -->
+        <div id="player-item-container" class="mt-8 flex flex-col items-center">
+            <p class="text-gray-400 mb-2">Your item to place:</p>
+            <div id="movable-item-wrapper"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="text-center mt-8">
+            <button id="submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">Submit Placement</button>
+            <button id="next-round-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg">Play Next Round</button>
+        </div>
+
+        <!-- Score Display -->
+        <div class="mt-8 text-center">
+             <div class="bg-gray-800 inline-block p-4 rounded-xl border border-gray-700">
+                <p class="text-sm text-gray-400">Round Score</p>
+                <p class="text-3xl font-bold text-white"><span id="round-correct-display">0</span> / 4</p>
+                <p class="text-lg font-mono text-yellow-400" id="round-winnings-display">$0</p>
+            </div>
+             <div class="bg-gray-800 inline-block p-4 rounded-xl border border-gray-700 ml-4">
+                <p class="text-sm text-gray-400">Total Winnings</p>
+                <p class="text-3xl font-bold text-green-400" id="total-winnings-display">$0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Score Screen -->
+    <div id="final-score-container" class="hidden text-center">
+        <h1 class="text-4xl font-bold">Game Over!</h1>
+        <p class="text-lg text-gray-400 mt-2">Here's your final score:</p>
+        <div class="bg-gray-800 inline-block p-8 rounded-2xl border border-gray-700 mt-8">
+            <p class="text-xl text-gray-300">Total Winnings</p>
+            <p id="final-total-winnings" class="text-6xl font-bold text-green-400 my-2"></p>
+        </div>
+        <div class="mt-8">
+            <button id="play-again-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg text-lg">Play Another Game</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .item-box {
+        width: 120px;
+        min-width: 120px;
+        height: 100px;
+        background-color: #1f2937; /* gray-800 */
+        border: 2px solid #374151; /* gray-700 */
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        text-align: center;
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+    .item-name {
+        font-weight: 600;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+    .item-value {
+        font-size: 0.75rem;
+        line-height: 1rem;
+        color: #9ca3af; /* gray-400 */
+    }
+    .drop-zone {
+        height: 100px;
+        border: 2px dashed #4b5563; /* gray-600 */
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        width: 30px;
+        min-width: 30px;
+    }
+    .drop-zone.drag-over {
+        background-color: #374151; /* gray-700 */
+        width: 120px;
+        min-width: 120px;
+    }
+    .movable {
+        border-color: #3b82f6; /* blue-500 */
+        cursor: grab;
+    }
+    .movable:active {
+        cursor: grabbing;
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+    .correct {
+        border-color: #10b981; /* emerald-500 */
+    }
+    .incorrect {
+        border-color: #ef4444; /* red-500 */
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const gameContainer = document.getElementById('game-container');
+        const finalScoreContainer = document.getElementById('final-score-container');
+        const gameData = JSON.parse('{{ game_data_json|escapejs }}');
+
+        if (!gameData || !gameData.rounds || Object.keys(gameData.rounds).length < 4) {
+            gameContainer.innerHTML = `<div class="text-center p-8 bg-gray-800 rounded-xl"><h1 class="text-2xl font-bold">Game Data Not Found</h1><p class="text-gray-400 mt-2">Could not load a complete game from the database. Please try again later or add more Preliminary Line data.</p></div>`;
+            return;
+        }
+
+        const ROUND_VALUES = { 1: 2400, 2: 3000, 3: 3600, 4: 4200 };
+        let currentRound = 1;
+        let currentItemIndex = 1;
+        let lineItems = [];
+        let roundCorrect = 0;
+        let roundWinnings = 0;
+        let totalWinnings = 0;
+
+        const lineContainer = document.getElementById('line-container');
+        const movableItemWrapper = document.getElementById('movable-item-wrapper');
+        const submitBtn = document.getElementById('submit-btn');
+        const nextRoundBtn = document.getElementById('next-round-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const roundResultInfo = document.getElementById('round-result-info');
+
+        function createItemBox(item, isMovable = false, showValue = true) {
+            const box = document.createElement('div');
+            box.className = 'item-box';
+            if (item) {
+                box.dataset.order = item.order;
+                const valueHtml = showValue ? `<span class="item-value">${item.value || ''}</span>` : '';
+                box.innerHTML = `<span class="item-name">${item.name}</span>${valueHtml}`;
+                if(item.type === 'seed' || item.isCorrect) box.classList.add('correct');
+            }
+            if (isMovable) {
+                box.classList.add('movable');
+                box.draggable = true;
+                box.id = 'movable-item';
+            }
+            return box;
+        }
+
+        function createDropZone() {
+            const zone = document.createElement('div');
+            zone.className = 'drop-zone';
+            return zone;
+        }
+
+        function renderLine(itemsOnLine, isFinal = false) {
+            lineContainer.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            if (!isFinal) {
+                fragment.appendChild(createDropZone());
+            }
+            itemsOnLine.forEach(item => {
+                const box = createItemBox(item, false, true);
+                if (item.isCorrect === false) box.classList.add('incorrect'); // Keep incorrect red
+                fragment.appendChild(box);
+                if (!isFinal) {
+                    fragment.appendChild(createDropZone());
+                }
+            });
+            lineContainer.appendChild(fragment);
+            if (!isFinal) {
+                addDropZoneListeners();
+            }
+        }
+
+        function loadNextItem() {
+            const roundData = gameData.rounds[String(currentRound)];
+            if (currentItemIndex < 5) {
+                const nextItem = roundData.items[currentItemIndex];
+                movableItemWrapper.innerHTML = '';
+                movableItemWrapper.appendChild(createItemBox(nextItem, true, false));
+                addDragListeners();
+            } else {
+                movableItemWrapper.innerHTML = '';
+                submitBtn.classList.add('hidden');
+                totalWinnings += roundWinnings;
+                document.getElementById('total-winnings-display').textContent = `$${Math.round(totalWinnings)}`;
+
+                const episodeCorrect = roundData.episodeCorrectCount;
+                roundResultInfo.textContent = `On the show, ${episodeCorrect} contestant${episodeCorrect !== 1 ? 's' : ''} got this line correct.`;
+                roundResultInfo.classList.remove('hidden');
+
+                if (currentRound < 4) {
+                    nextRoundBtn.classList.remove('hidden');
+                } else {
+                    showFinalScore();
+                }
+            }
+        }
+
+        function showFinalScore() {
+            gameContainer.classList.add('hidden');
+            finalScoreContainer.classList.remove('hidden');
+            document.getElementById('final-total-winnings').textContent = `$${Math.round(totalWinnings)}`;
+        }
+
+        function checkPlacement(placedItem) {
+            const allBoxes = Array.from(lineContainer.children);
+            const placedIndex = allBoxes.findIndex(el => el.id === 'movable-item');
+            const leftItem = allBoxes[placedIndex - 1];
+            const rightItem = allBoxes[placedIndex + 1];
+            const placedOrder = parseInt(placedItem.dataset.order);
+            const leftOrder = leftItem && leftItem.dataset.order ? parseInt(leftItem.dataset.order) : -Infinity;
+            const rightOrder = rightItem && rightItem.dataset.order ? parseInt(rightItem.dataset.order) : Infinity;
+            return placedOrder > leftOrder && placedOrder < rightOrder;
+        }
+
+        function processTurn(isCorrect, placedItem) {
+            placedItem.draggable = false;
+            placedItem.id = '';
+            placedItem.classList.remove('movable');
+
+            const itemData = { ...gameData.rounds[String(currentRound)].items[currentItemIndex], order: parseInt(placedItem.dataset.order) };
+
+            if (isCorrect) {
+                placedItem.classList.add('correct');
+                itemData.isCorrect = true;
+                roundCorrect++;
+                roundWinnings += ROUND_VALUES[currentRound] / 4;
+            } else {
+                placedItem.classList.add('incorrect');
+                itemData.isCorrect = false;
+            }
+
+            // Update score display immediately after every turn
+            document.getElementById('round-correct-display').textContent = roundCorrect;
+            document.getElementById('round-winnings-display').textContent = `$${Math.round(roundWinnings)}`;
+
+            lineItems.push(itemData);
+            lineItems.sort((a,b) => a.order - b.order);
+
+            const isLastItem = currentItemIndex === 4;
+
+            setTimeout(() => {
+                renderLine(lineItems, isLastItem);
+                currentItemIndex++;
+                loadNextItem();
+            }, isCorrect ? 1000 : 2000);
+        }
+
+        function initRound() {
+            const roundData = gameData.rounds[String(currentRound)];
+            document.getElementById('game-id-display').textContent = gameData.gameId;
+            document.getElementById('round-number-display').textContent = currentRound;
+            document.getElementById('round-value-display').textContent = `$${ROUND_VALUES[currentRound]}`;
+            document.getElementById('topic-display').textContent = roundData.topic;
+            document.getElementById('order-desc-display').textContent = roundData.orderDescription;
+
+            roundCorrect = 0;
+            roundWinnings = 0;
+            document.getElementById('round-correct-display').textContent = roundCorrect;
+            document.getElementById('round-winnings-display').textContent = '$0';
+            roundResultInfo.classList.add('hidden');
+
+            currentItemIndex = 1;
+            lineItems = [roundData.items[0]];
+
+            renderLine(lineItems);
+            loadNextItem();
+
+            submitBtn.classList.remove('hidden');
+            submitBtn.disabled = true;
+            nextRoundBtn.classList.add('hidden');
+        }
+
+        function addDragListeners() {
+            const movable = document.getElementById('movable-item');
+            if (!movable) return;
+            movable.addEventListener('dragstart', () => movable.classList.add('opacity-50'));
+            movable.addEventListener('dragend', () => movable.classList.remove('opacity-50'));
+        }
+
+        function addDropZoneListeners() {
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                zone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+                    const movable = document.getElementById('movable-item');
+                    if (movable) {
+                        zone.replaceWith(movable);
+                        submitBtn.disabled = false;
+                    }
+                });
+            });
+        }
+
+        submitBtn.addEventListener('click', () => {
+            const placedItem = document.getElementById('movable-item');
+            if (!placedItem) return;
+            submitBtn.disabled = true;
+            processTurn(checkPlacement(placedItem), placedItem);
+        });
+
+        nextRoundBtn.addEventListener('click', () => {
+            currentRound++;
+            initRound();
+        });
+
+        playAgainBtn.addEventListener('click', () => window.location.reload());
+
+        initRound();
+    });
+</script>
+{% endblock %}
+
