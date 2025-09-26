@@ -73,6 +73,11 @@ and paths chosen rather than merely dictated.
 ## New stuff
 * Permalinks added for each episode for easier sharing on social media
 
+## Game Play
+* Admin to enter perfect lines
+* Ability to play a perfect line game
+* Leaderboard to track daily, weekly, monthly leaders
+* 
 
 # ToDo
 
@@ -83,17 +88,21 @@ and paths chosen rather than merely dictated.
 * enter final line
 
 ### Game Play
-* Play single player perfect line
-* * Add sound
 * Play single player fast line
 * Play final line
+
 * Play 2-player perfect line
 * Play 2-player fast line
+
 * Play 4-player perfect line
 * Play against computer perfect line
-* Leaderboards
-* daily, weekly, monthly
 
-## Genral
+* Play full game, start to finish
+* Full game vs AI
+* Full game vs opponent
+
+* Mobile drag logic. Tried, failed, give another stab in future
+
+## General
 * Bug on save for tie after fast line
 * Tied games stats (# ties in after 4, # ties for victory)
