@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import PreliminaryLine, Game, CustomUser
+from .models import PreliminaryLine, Game, CustomUser, FastLine
+
 
 class CustomUserCreationForm(forms.ModelForm):
     """
@@ -36,6 +37,7 @@ class CustomUserChangeForm(UserChangeForm):
     the user, but replaces the password field with admin's
     password hash display field.
     """
+
     class Meta:
         model = CustomUser
         fields = ("email", "role", "is_active", "is_staff", "is_superuser")
@@ -47,6 +49,21 @@ class PreliminaryLineForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'order_description': forms.TextInput(attrs={'placeholder': 'e.g., Lowest to Highest'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['game'].queryset = Game.objects.order_by('-id')
+        self.fields['game'].label_from_instance = lambda obj: f"Ep {obj.id}: {obj.episode_title}"
+
+
+class FastLineForm(forms.ModelForm):
+    class Meta:
+        model = FastLine
+        fields = '__all__'
+        widgets = {
+            # Use RadioSelect widgets for the position fields for a better UI
+            **{f'item{i}_position': forms.RadioSelect for i in range(1, 13)}
         }
 
     def __init__(self, *args, **kwargs):

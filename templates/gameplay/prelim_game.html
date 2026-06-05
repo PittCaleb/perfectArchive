@@ -12,8 +12,10 @@
         <header class="text-center mb-2">
             <div class="flex justify-between items-center bg-gray-800 p-3 rounded-xl border border-gray-700">
                 <div>
-                    <p class="text-base text-gray-400">Game #<span id="game-id-display"></span></p>
-                    <h1 class="text-2xl font-bold">Round <span id="round-number-display"></span></h1>
+                    <h1 class="text-2xl font-bold">
+                        <span class="text-base text-gray-400 font-normal">Game #<span id="game-id-display"></span>,</span>
+                        Round <span id="round-number-display"></span>
+                    </h1>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400">Line Value</p>
@@ -104,9 +106,9 @@
 
 <style>
     .item-box {
-        width: 120px;
-        min-width: 120px;
-        height: 100px;
+        width: 144px;
+        min-width: 144px;
+        height: 120px;
         background-color: #1f2937;
         border: 2px solid #374151;
         border-radius: 0.5rem;
@@ -130,7 +132,7 @@
         color: #9ca3af;
     }
     .drop-zone {
-        height: 100px;
+        height: 120px;
         border: 2px dashed #4b5563;
         border-radius: 0.5rem;
         transition: all 0.2s ease;
@@ -139,8 +141,8 @@
     }
     .drop-zone.drag-over {
         background-color: #374151;
-        width: 120px;
-        min-width: 120px;
+        width: 144px;
+        min-width: 144px;
     }
     .movable {
         border-color: #3b82f6;

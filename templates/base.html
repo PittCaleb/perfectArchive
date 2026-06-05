@@ -48,17 +48,17 @@
                     <!-- Desktop Menu -->
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.url_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Recent Games</a>
-                            <a href="{% url 'statistics' %}" class="{% if request.resolver_match.url_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Statistics</a>
-                            <a href="{% url 'analysis' %}" class="{% if request.resolver_match.url_name == 'analysis' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Analysis</a>
-                            <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Show Info</a>
-                            <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">About</a>
+                            <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.view_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Recent Games</a>
+                            <a href="{% url 'statistics' %}" class="{% if request.resolver_match.view_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Statistics</a>
+                            <a href="{% url 'analysis' %}" class="{% if request.resolver_match.view_name == 'analysis' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Analysis</a>
+                            <a href="{% url 'search_games' %}" class="{% if request.resolver_match.view_name == 'search_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Search Games</a>
+                            <a href="{% url 'show_info' %}" class="{% if request.resolver_match.view_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Show Info</a>
+                            <a href="{% url 'about' %}" class="{% if request.resolver_match.view_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">About</a>
                             {% if user.is_authenticated and user.role == 'BETA_TESTER' or user.is_superuser %}
-                                <a href="{% url 'gameplay:play' %}" class="{% if request.resolver_match.url_name == 'gameplay:play' %}bg-gray-900 text-green-300{% else %}text-green-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Play</a>
+                                <a href="{% url 'gameplay:play' %}" class="{% if request.resolver_match.app_name == 'gameplay' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Play</a>
                             {% endif %}
-                            {% if perms.archives.add_game %}
-                                <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Score Game</a>
-                                <a href="{% url 'add_line' %}" class="{% if request.resolver_match.url_name == 'add_line' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Add Line</a>
+                             {% if perms.archives.add_game %}
+                                <a href="{% url 'game_admin' %}" class="{% if 'admin' in request.resolver_match.view_name or 'score_game' in request.resolver_match.view_name or 'add_line' in request.resolver_match.view_name or 'add_fast_line' in request.resolver_match.view_name or 'add_final_line' in request.resolver_match.view_name or 'manage_leaderboards' in request.resolver_match.view_name %}bg-red-900 text-white{% else %}text-red-400 hover:bg-red-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Game Admin</a>
                             {% endif %}
                         </div>
                     </div>
@@ -91,17 +91,17 @@
         <!-- Mobile menu, show/hide based on menu state. -->
         <div class="md:hidden hidden" id="mobile-menu">
             <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
-                <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.url_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Recent Games</a>
-                <a href="{% url 'statistics' %}" class="{% if request.resolver_match.url_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Statistics</a>
-                <a href="{% url 'analysis' %}" class="{% if request.resolver_match.url_name == 'analysis' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Analysis</a>
-                <a href="{% url 'show_info' %}" class="{% if request.resolver_match.url_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Show Info</a>
-                <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">About</a>
+                <a href="{% url 'recent_games' %}" class="{% if request.resolver_match.view_name == 'recent_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Recent Games</a>
+                <a href="{% url 'statistics' %}" class="{% if request.resolver_match.view_name == 'statistics' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Statistics</a>
+                <a href="{% url 'analysis' %}" class="{% if request.resolver_match.view_name == 'analysis' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Analysis</a>
+                <a href="{% url 'search_games' %}" class="{% if request.resolver_match.view_name == 'search_games' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Search Games</a>
+                <a href="{% url 'show_info' %}" class="{% if request.resolver_match.view_name == 'show_info' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Show Info</a>
+                <a href="{% url 'about' %}" class="{% if request.resolver_match.view_name == 'about' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">About</a>
                 {% if user.is_authenticated and user.role == 'BETA_TESTER' or user.is_superuser %}
-                    <a href="{% url 'gameplay:play' %}" class="{% if request.resolver_match.url_name == 'gameplay:play' %}bg-gray-900 text-green-300{% else %}text-green-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Play</a>
+                     <a href="{% url 'gameplay:play' %}" class="{% if request.resolver_match.app_name == 'gameplay' %}bg-gray-900 text-white{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Play</a>
                 {% endif %}
                 {% if perms.archives.add_game %}
-                    <a href="{% url 'score_game' %}" class="{% if request.resolver_match.url_name == 'score_game' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Score Game</a>
-                    <a href="{% url 'add_line' %}" class="{% if request.resolver_match.url_name == 'add_line' %}bg-gray-900 text-yellow-300{% else %}text-yellow-400 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Add Line</a>
+                    <a href="{% url 'game_admin' %}" class="{% if 'admin' in request.resolver_match.view_name or 'score_game' in request.resolver_match.view_name or 'add_line' in request.resolver_match.view_name or 'add_fast_line' in request.resolver_match.view_name or 'add_final_line' in request.resolver_match.view_name or 'manage_leaderboards' in request.resolver_match.view_name %}bg-red-900 text-white{% else %}text-red-400 hover:bg-red-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base font-medium">Game Admin</a>
                 {% endif %}
             </div>
             <div class="border-t border-gray-700 pb-3 pt-4">
@@ -119,7 +119,6 @@
             </div>
         </div>
     </nav>
-
     <main>
         <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
             {% block content %}{% endblock %}
