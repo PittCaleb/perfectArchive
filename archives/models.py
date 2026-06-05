@@ -76,7 +76,7 @@ class Game(models.Model):
         return f"Ep {self.id}: {self.episode_title} ({self.air_date})"
 
     class Meta:
-        ordering = ['-air_date', '-episode_number']
+        ordering = ['-id']
         unique_together = ('air_date', 'episode_number')
 
 
@@ -163,6 +163,32 @@ class PreliminaryLine(models.Model):
     class Meta:
         ordering = ['game', 'round_number']
         unique_together = ('game', 'round_number')
+
+
+class FastLine(models.Model):
+    """
+    Stores the detailed information for a single Fast Line round.
+    """
+    POSITION_CHOICES = [('before', 'Before'), ('after', 'After')]
+
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='fast_lines')
+    category = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+
+    seed_name = models.CharField(max_length=255)
+    seed_value = models.CharField(max_length=100, blank=True, null=True)
+
+    # Dynamically create fields for 12 items
+    for i in range(1, 13):
+        locals()[f'item{i}_name'] = models.CharField(max_length=255)
+        locals()[f'item{i}_value'] = models.CharField(max_length=100, blank=True, null=True)
+        locals()[f'item{i}_position'] = models.CharField(max_length=6, choices=POSITION_CHOICES)
+
+    def __str__(self):
+        return f"Game {self.game.id} Fast Line: {self.category}"
+
+    class Meta:
+        ordering = ['game']
 
 
 class Leaderboard(models.Model):

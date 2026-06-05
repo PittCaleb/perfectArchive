@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-4 px-2">
+
+    <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+        <h2 class="text-3xl font-extrabold text-yellow-400 tracking-tight">Search Games</h2>
+
+        <form method="GET" action="{% url 'search_games' %}" class="flex w-full md:w-auto shadow-sm">
+            <input type="hidden" name="sort" value="{{ sort_col }}">
+            <input type="hidden" name="dir" value="{{ sort_dir }}">
+            <input type="text" name="q" class="form-control text-gray-900 bg-white px-4 py-2 rounded-l-md w-full md:w-64 border-none focus:ring-2 focus:ring-yellow-400" placeholder="Search by player name..." value="{{ query }}">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-r-md transition duration-150">Search</button>
+        </form>
+    </div>
+
+    {% if page_obj %}
+        <div class="overflow-x-auto bg-gray-800 rounded-lg shadow">
+            <table class="w-full text-center whitespace-nowrap text-sm">
+
+                <thead class="bg-gray-700 text-gray-200 border-b-2 border-gray-900">
+                    <tr>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=show&dir={% if sort_col == 'show' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Show #</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'show' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'show' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'show' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=date&dir={% if sort_col == 'date' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Date</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'date' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'date' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'date' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=name&dir={% if sort_col == 'name' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Name</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'name' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'name' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'name' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=podium&dir={% if sort_col == 'podium' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Podium</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'podium' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'podium' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'podium' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=prelim_correct&dir={% if sort_col == 'prelim_correct' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Prelim<br>Correct</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'prelim_correct' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'prelim_correct' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'prelim_correct' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=prelim_score&dir={% if sort_col == 'prelim_score' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Prelim<br>Score</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'prelim_score' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'prelim_score' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'prelim_score' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=fl_right&dir={% if sort_col == 'fl_right' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Fast Line<br>Right</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'fl_right' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'fl_right' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'fl_right' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=fl_wrong&dir={% if sort_col == 'fl_wrong' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Fast Line<br>Wrong</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'fl_wrong' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'fl_wrong' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'fl_wrong' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=fl_winnings&dir={% if sort_col == 'fl_winnings' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Winnings after<br>Fast Line</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'fl_winnings' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'fl_winnings' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'fl_winnings' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=final_right&dir={% if sort_col == 'final_right' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Final Line<br>Right</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'final_right' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'final_right' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'final_right' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                        <th class="px-2 py-4 font-semibold">
+                            <a href="?q={{ query }}&sort=total&dir={% if sort_col == 'total' and sort_dir == 'desc' %}asc{% else %}desc{% endif %}" class="hover:text-yellow-400 flex flex-col items-center justify-center">
+                                <span>Total<br>Winnings</span>
+                                <span class="text-xs mt-1 {% if sort_col == 'total' %}text-yellow-400{% else %}text-gray-500{% endif %}">{% if sort_col == 'total' and sort_dir == 'desc' %}&#9660;{% elif sort_col == 'total' and sort_dir == 'asc' %}&#9650;{% else %}&#8693;{% endif %}</span>
+                            </a>
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for player in page_obj %}
+
+                    <tr class="bg-gray-800 border-b-[12px] border-gray-900 transition hover:bg-gray-700">
+
+                        <td class="px-2 py-4">
+                            <button onclick="toggleGameReport('{{ player.id }}')" class="font-bold text-blue-400 hover:text-blue-300 underline underline-offset-4 decoration-2 focus:outline-none">
+                                {{ player.game.id }}
+                            </button>
+                        </td>
+
+                        <td class="px-2 py-4 text-gray-400">{{ player.game.air_date|date:"n/j/y" }}</td>
+                        <td class="px-2 py-4 font-bold text-white">{{ player.name }}</td>
+                        <td class="px-2 py-4">{{ player.podium_number }}</td>
+
+                        <td class="px-2 py-4">
+                            <div class="text-base text-white">{{ player.display_prelim_correct.raw }}</div>
+                            <div class="text-xs text-gray-400 mt-1">#{{ player.display_prelim_correct.rank }} / {{ player.display_prelim_correct.pct }}%</div>
+                        </td>
+
+                        <td class="px-2 py-4">
+                            <div class="text-base text-white">{{ player.display_prelim_score.raw }}</div>
+                            <div class="text-xs text-gray-400 mt-1">#{{ player.display_prelim_score.rank }} / {{ player.display_prelim_score.pct }}%</div>
+                        </td>
+
+                        <td class="px-2 py-4">
+                            {% if player.display_fl_right %}
+                                <div class="text-base text-white">{{ player.display_fl_right.raw }}</div>
+                                <div class="text-xs text-gray-400 mt-1">#{{ player.display_fl_right.rank }} / {{ player.display_fl_right.pct }}%</div>
+                            {% else %}
+                                <span class="text-gray-600">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-2 py-4">
+                            {% if player.display_fl_wrong %}
+                                <div class="text-base text-white">{{ player.display_fl_wrong.raw }}</div>
+                                <div class="text-xs text-gray-400 mt-1">#{{ player.display_fl_wrong.rank }} / {{ player.display_fl_wrong.pct }}%</div>
+                            {% else %}
+                                <span class="text-gray-600">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-2 py-4">
+                            {% if player.display_fl_winnings %}
+                                <div class="text-base text-white">${{ player.display_fl_winnings.raw }}</div>
+                                <div class="text-xs text-gray-400 mt-1">#{{ player.display_fl_winnings.rank }} / {{ player.display_fl_winnings.pct }}%</div>
+                            {% else %}
+                                <span class="text-gray-600">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-2 py-4">
+                            {% if player.display_final_right %}
+                                <div class="text-base text-white">{{ player.display_final_right.raw }}</div>
+                                <div class="text-xs text-gray-400 mt-1">#{{ player.display_final_right.rank }} / {{ player.display_final_right.pct }}%</div>
+                            {% else %}
+                                <span class="text-gray-600">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-2 py-4 border-l border-gray-700 bg-gray-800/50">
+                            <div class="text-lg text-green-400 font-extrabold">${{ player.display_total.raw }}</div>
+                            {% if player.display_total.rank %}
+                                <div class="text-xs text-gray-400 mt-1">#{{ player.display_total.rank }} / {{ player.display_total.pct }}%</div>
+                            {% else %}
+                                <div class="text-xs text-gray-500 mt-1">-</div>
+                            {% endif %}
+                        </td>
+
+                    </tr>
+
+                    <tr id="report-{{ player.id }}" class="hidden bg-gray-900">
+                        <td colspan="11" class="p-6">
+
+                            <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-4xl mx-auto shadow-lg text-left">
+                                <h3 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">
+                                    Episode {{ player.game.id }} Results <span class="text-gray-400 text-sm font-normal ml-2">Aired {{ player.game.air_date|date:"n/j/y" }}</span>
+                                </h3>
+
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    {% for gp in player.game.players.all %}
+                                        <div class="bg-gray-700 rounded p-4 border {% if gp.is_winner %}border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]{% elif gp.is_advancing %}border-blue-500{% else %}border-gray-600 opacity-80{% endif %}">
+
+                                            <div class="font-bold text-lg mb-2 {% if gp.is_winner %}text-green-400{% elif gp.is_advancing %}text-blue-400{% else %}text-gray-300{% endif %}">
+                                                {{ gp.name }}
+                                                {% if gp.is_winner %}&#127942;{% endif %}
+                                            </div>
+
+                                                                                        <div class="text-sm text-gray-300 space-y-2">
+
+                                                <div class="flex justify-between items-center">
+                                                    <span>Prelim:</span>
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="flex space-x-1">
+                                                            <div class="w-2.5 h-2.5 rounded-full {% if gp.round1_correct is True %}bg-green-500{% elif gp.round1_correct is False %}bg-red-500{% else %}bg-gray-600{% endif %}"></div>
+                                                            <div class="w-2.5 h-2.5 rounded-full {% if gp.round2_correct is True %}bg-green-500{% elif gp.round2_correct is False %}bg-red-500{% else %}bg-gray-600{% endif %}"></div>
+                                                            <div class="w-2.5 h-2.5 rounded-full {% if gp.round3_correct is True %}bg-green-500{% elif gp.round3_correct is False %}bg-red-500{% else %}bg-gray-600{% endif %}"></div>
+                                                            <div class="w-2.5 h-2.5 rounded-full {% if gp.round4_correct is True %}bg-green-500{% elif gp.round4_correct is False %}bg-red-500{% else %}bg-gray-600{% endif %}"></div>
+                                                        </div>
+                                                        <span class="font-mono">${{ gp.round_total_score }}</span>
+                                                    </div>
+                                                </div>
+
+                                                {% if gp.fast_line_correct_count != None %}
+                                                    <div class="flex justify-between items-center">
+                                                        <span>Fast Line:</span>
+                                                        <span class="font-mono">
+                                                            <span class="text-xs mr-2">(<span class="text-green-400">{{ gp.fast_line_correct_count }}</span>/<span class="text-red-400">{{ gp.fast_line_incorrect_count }}</span>)</span>
+                                                            ${{ gp.fast_line_total_score }}
+                                                        </span>
+                                                    </div>
+                                                {% endif %}
+
+                                                {% if gp.final_round_correct_count is not None %}
+                                                    <div class="flex justify-between items-center text-green-400">
+                                                        <span>Final Line:</span>
+                                                        <span class="font-mono font-bold">{{ gp.final_round_correct_count }} Right</span>
+                                                    </div>
+                                                {% endif %}
+
+                                                <div class="flex justify-between pt-2 mt-2 border-t border-gray-600 font-bold {% if gp.is_winner %}text-white{% endif %}">
+                                                    <span>Total:</span>
+                                                    <span class="font-mono">${{ gp.total_winnings }}</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-between items-center mt-6">
+            <div class="text-gray-400 text-sm">
+                Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </div>
+            <div class="flex space-x-2">
+                {% if page_obj.has_previous %}
+                    <a href="?q={{ query }}&sort={{ sort_col }}&dir={{ sort_dir }}&page={{ page_obj.previous_page_number }}" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">&laquo; Prev</a>
+                {% else %}
+                    <span class="bg-gray-800 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed">&laquo; Prev</span>
+                {% endif %}
+
+                {% if page_obj.has_next %}
+                    <a href="?q={{ query }}&sort={{ sort_col }}&dir={{ sort_dir }}&page={{ page_obj.next_page_number }}" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">Next &raquo;</a>
+                {% else %}
+                    <span class="bg-gray-800 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed">Next &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+
+    {% else %}
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 text-center mt-8">
+            <svg class="mx-auto h-12 w-12 text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-xl font-bold text-gray-300">No players found</h3>
+            <p class="text-gray-500 mt-2">Try adjusting your search query.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleGameReport(playerId) {
+        const reportRow = document.getElementById('report-' + playerId);
+
+        if (reportRow.classList.contains('hidden')) {
+            reportRow.classList.remove('hidden');
+        } else {
+            reportRow.classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

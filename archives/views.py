@@ -2,16 +2,180 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
-from .models import Game, Player, CustomUser, Syndication, StatisticsCache, PreliminaryLine
+from .models import Game, Player, CustomUser, Syndication, StatisticsCache, PreliminaryLine, FastLine
 import json
 from django.core.paginator import Paginator
 from django.db.models import Count, Avg, Q, Sum, F
 from collections import defaultdict
 from .stats_utils import update_statistics_cache
-from .forms import PreliminaryLineForm
+from .forms import PreliminaryLineForm, FastLineForm
 from django.urls import reverse
 from django.contrib import messages
 
+
+def search_games_view(request):
+    query = request.GET.get('q', '').strip()
+    sort_col = request.GET.get('sort', 'total')
+    sort_dir = request.GET.get('dir', 'desc')
+
+    # Fetch all players to establish accurate populations and allow default display
+    all_players = list(Player.objects.select_related('game').prefetch_related('game__players').all())
+
+    prelim_correct_pop, prelim_score_pop = [], []
+    fl_right_pop, fl_wrong_pop, fl_winnings_pop = [], [], []
+    final_right_pop = []
+
+    # We will only populate this with the winning score of each game
+    total_winnings_pop = []
+    winning_player_ids = set()
+    processed_games_for_pop = set()
+
+    # Build populations for math
+    for p in all_players:
+        # Determine the winner(s) of this game to build the winners-only population
+        if p.game.id not in processed_games_for_pop:
+            advancing_ids, winner_ids = _calculate_game_outcomes(p.game)
+            for w_id in winner_ids:
+                winning_player_ids.add(w_id)
+                winner_obj = next((gp for gp in p.game.players.all() if gp.id == w_id), None)
+                if winner_obj:
+                    total_winnings_pop.append(winner_obj.total_winnings)
+            processed_games_for_pop.add(p.game.id)
+
+        rounds = [p.round1_correct, p.round2_correct, p.round3_correct, p.round4_correct]
+        p_correct = sum(1 for r in rounds if r is True)
+        prelim_correct_pop.append(p_correct)
+
+        p_score = (p.round1_score or 0) + (p.round2_score or 0) + (p.round3_score or 0) + (p.round4_score or 0)
+        prelim_score_pop.append(p_score)
+
+        # FIX: Use fast_line_correct_count as the true flag for Fast Line participation
+        if p.fast_line_correct_count is not None:
+            fl_right_pop.append(p.fast_line_correct_count)
+
+            if p.fast_line_incorrect_count is not None:
+                fl_wrong_pop.append(p.fast_line_incorrect_count)
+
+            # Append to Fast Line Winnings population ONLY if they played
+            fl_score_val = p.fast_line_score if p.fast_line_score is not None else 0
+            fl_winnings_pop.append(p_score + fl_score_val)
+
+        if p.final_round_correct_count is not None:
+            final_right_pop.append(p.final_round_correct_count)
+
+    def get_stats(score, population, reverse=True):
+        if score is None or not population:
+            return None, None
+
+        sorted_pop = sorted(population, reverse=reverse)
+        # Rank: Ties get the best possible rank index (first occurrence)
+        rank = sorted_pop.index(score) + 1
+        total = len(population)
+
+        # Percentile: Rank-based. Guarantees Rank 1 = 100%.
+        # Represents the percentage of the population that ranked at or below this tier.
+        percentile = round(((total - rank + 1) / total) * 100) if total > 0 else 0
+
+        return rank, percentile
+
+    results = []
+
+    # Filter for the view based on search query
+    view_players = [p for p in all_players if query.lower() in p.name.lower()] if query else all_players
+
+    for mp in view_players:
+        mp_rounds = [mp.round1_correct, mp.round2_correct, mp.round3_correct, mp.round4_correct]
+        mp_prelim_correct = sum(1 for r in mp_rounds if r is True)
+        mp_prelim_score = (mp.round1_score or 0) + (mp.round2_score or 0) + (mp.round3_score or 0) + (
+                    mp.round4_score or 0)
+        # Gatekeep the individual calculation so eliminated players get 'None'
+        if mp.fast_line_correct_count is not None:
+            fl_score_val = mp.fast_line_score if mp.fast_line_score is not None else 0
+            mp_fl_winnings = mp_prelim_score + fl_score_val
+        else:
+            mp_fl_winnings = None
+        c_rank, c_pct = get_stats(mp_prelim_correct, prelim_correct_pop)
+        s_rank, s_pct = get_stats(mp_prelim_score, prelim_score_pop)
+        fl_r_rank, fl_r_pct = get_stats(mp.fast_line_correct_count, fl_right_pop)
+        fl_w_rank, fl_w_pct = get_stats(mp.fast_line_incorrect_count, fl_wrong_pop, reverse=False)
+        fl_win_rank, fl_win_pct = get_stats(mp_fl_winnings, fl_winnings_pop)
+        fin_r_rank, fin_r_pct = get_stats(mp.final_round_correct_count, final_right_pop)
+        # Only rank the player against other winners if they actually won their game
+        if mp.id in winning_player_ids:
+            tot_rank, tot_pct = get_stats(mp.total_winnings, total_winnings_pop)
+        else:
+            tot_rank, tot_pct = None, None
+
+        # Attach clean attributes for sorting
+        mp.sort_show = mp.game.id
+        mp.sort_date = mp.game.air_date
+        mp.sort_name = mp.name.lower()
+        mp.sort_podium = mp.podium_number
+        mp.sort_prelim_correct = mp_prelim_correct
+        mp.sort_prelim_score = mp_prelim_score
+        mp.sort_fl_right = mp.fast_line_correct_count if mp.fast_line_correct_count is not None else -1
+        mp.sort_fl_wrong = mp.fast_line_incorrect_count if mp.fast_line_incorrect_count is not None else 999
+        mp.sort_fl_winnings = mp_fl_winnings if mp_fl_winnings is not None else -9999
+        mp.sort_final_right = mp.final_round_correct_count if mp.final_round_correct_count is not None else -1
+        mp.sort_total = mp.total_winnings
+
+        mp.display_prelim_correct = {'raw': mp_prelim_correct, 'rank': c_rank, 'pct': c_pct}
+        mp.display_prelim_score = {'raw': mp_prelim_score, 'rank': s_rank, 'pct': s_pct}
+
+        if mp.fast_line_correct_count is not None:
+            mp.display_fl_right = {'raw': mp.fast_line_correct_count, 'rank': fl_r_rank, 'pct': fl_r_pct}
+            mp.display_fl_wrong = {'raw': mp.fast_line_incorrect_count, 'rank': fl_w_rank, 'pct': fl_w_pct}
+            mp.display_fl_winnings = {'raw': mp_fl_winnings, 'rank': fl_win_rank, 'pct': fl_win_pct}
+        else:
+            mp.display_fl_right = mp.display_fl_wrong = mp.display_fl_winnings = None
+
+        if mp.final_round_correct_count is not None:
+            mp.display_final_right = {'raw': mp.final_round_correct_count, 'rank': fin_r_rank, 'pct': fin_r_pct}
+        else:
+            mp.display_final_right = None
+
+        mp.display_total = {'raw': mp.total_winnings, 'rank': tot_rank, 'pct': tot_pct}
+
+        results.append(mp)
+
+    # Apply Sorting
+    reverse_sort = (sort_dir == 'desc')
+    sort_key_map = {
+        'show': lambda x: x.sort_show, 'date': lambda x: x.sort_date, 'name': lambda x: x.sort_name,
+        'podium': lambda x: x.sort_podium, 'prelim_correct': lambda x: x.sort_prelim_correct,
+        'prelim_score': lambda x: x.sort_prelim_score, 'fl_right': lambda x: x.sort_fl_right,
+        'fl_wrong': lambda x: x.sort_fl_wrong, 'fl_winnings': lambda x: x.sort_fl_winnings,
+        'final_right': lambda x: x.sort_final_right, 'total': lambda x: x.sort_total,
+    }
+
+    if sort_col in sort_key_map:
+        results.sort(key=sort_key_map[sort_col], reverse=reverse_sort)
+
+    # Paginate (20 players per page)
+    paginator = Paginator(results, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Process game outcomes ONLY for the players on the current page so the dropdown report works
+    processed_games = set()
+    for p in page_obj:
+        game = p.game
+        if game.id not in processed_games:
+            advancing_ids, winner_ids = _calculate_game_outcomes(game)
+            for gp in game.players.all():
+                gp.is_advancing = gp.id in advancing_ids
+                gp.is_winner = gp.id in winner_ids
+                gp.round_total_score = gp.round1_score + gp.round2_score + gp.round3_score + gp.round4_score
+                gp.fast_line_total_score = gp.round_total_score + (gp.fast_line_score or 0)
+            processed_games.add(game.id)
+
+    context = {
+        'query': query,
+        'page_obj': page_obj,
+        'sort_col': sort_col,
+        'sort_dir': sort_dir,
+    }
+    return render(request, 'archives/search_games.html', context)
 
 def _calculate_game_outcomes(game):
     """
@@ -202,16 +366,11 @@ def about_view(request):
     return render(request, 'archives/about.html')
 
 
-# Helper function and view for the new Beta Test page
-def is_beta_tester(user):
-    return user.is_authenticated and user.role == CustomUser.Role.BETA_TESTER
-
-def is_beta_tester_or_superuser(user):
-    return user.is_authenticated and (user.role == CustomUser.Role.BETA_TESTER or user.is_superuser)
-
-@user_passes_test(is_beta_tester_or_superuser)
-def play_view(request):
-    return render(request, 'archives/play.html')
+# Admin Pages
+@login_required
+@permission_required('archives.add_game', raise_exception=True)
+def game_admin_view(request):
+    return render(request, 'archives/game_admin.html')
 
 
 @login_required
@@ -224,47 +383,92 @@ def add_preliminary_line_view(request):
             messages.success(request,
                              f"Successfully added line for Game {instance.game.id}, Round {instance.round_number}.")
 
-            # Smart redirect logic
             next_game_id = instance.game.id
             next_round_number = instance.round_number + 1
-            if instance.round_number == 4:
-                next_game_id += 1
+            if instance.round_number >= 4:
+                next_game = Game.objects.filter(id__gt=instance.game.id).order_by('id').first()
+                next_game_id = next_game.id if next_game else instance.game.id + 1
                 next_round_number = 1
 
-            redirect_url = f"{reverse('add_line')}?game={next_game_id}&round_number={next_round_number}"
-            return redirect(redirect_url)
+            return redirect(f"{reverse('add_line')}?game={next_game_id}&round_number={next_round_number}")
     else:
         initial_data = {
             'game': request.GET.get('game'),
             'round_number': request.GET.get('round_number')
         }
+        if not initial_data['game']:
+            last_line = PreliminaryLine.objects.order_by('-game__id', '-round_number').first()
+            if last_line:
+                next_game_id = last_line.game.id
+                next_round_number = last_line.round_number + 1
+                if next_round_number > 4:
+                    next_round_number = 1
+                    next_game_obj = Game.objects.filter(id__gt=last_line.game.id).order_by('id').first()
+                    if next_game_obj:
+                        next_game_id = next_game_obj.id
+                    else:
+                        next_game_id += 1
+                initial_data['game'] = next_game_id
+                initial_data['round_number'] = next_round_number
+            else:
+                first_game = Game.objects.order_by('id').first()
+                if first_game:
+                    initial_data['game'] = first_game.id
+                    initial_data['round_number'] = 1
+
         form = PreliminaryLineForm(initial=initial_data)
 
-    # If no initial data is provided via GET, determine the next logical entry
-    if not request.GET.get('game'):
-        last_line = PreliminaryLine.objects.order_by('-game__id', '-round_number').first()
-        if last_line:
-            next_game = last_line.game
-            next_round = last_line.round_number + 1
-            if next_round > 4:
-                next_round = 1
-                # Find the next game ID in sequence
-                next_game_obj = Game.objects.filter(id__gt=next_game.id).order_by('id').first()
-                if next_game_obj:
-                    next_game = next_game_obj
-                else:  # Or just increment if there's a gap
-                    next_game = Game.objects.get(id=next_game.id + 1)
-
-            form.initial['game'] = next_game
-            form.initial['round_number'] = next_round
-        else:
-            # First ever entry, default to first game
-            first_game = Game.objects.order_by('id').first()
-            if first_game:
-                form.initial['game'] = first_game
-                form.initial['round_number'] = 1
-
     return render(request, 'archives/add_preliminary_line.html', {'form': form})
+
+
+@login_required
+@permission_required('archives.add_game', raise_exception=True)
+def add_fast_line_view(request):
+    if request.method == 'POST':
+        form = FastLineForm(request.POST)
+        if form.is_valid():
+            instance = form.save()
+            messages.success(request, f"Successfully added Fast Line for Game {instance.game.id}.")
+
+            num_lines_for_game = FastLine.objects.filter(game=instance.game).count()
+            if num_lines_for_game < 2:
+                next_game_id = instance.game.id
+            else:
+                next_game = Game.objects.filter(id__gt=instance.game.id).order_by('id').first()
+                next_game_id = next_game.id if next_game else instance.game.id + 1
+
+            return redirect(f"{reverse('add_fast_line')}?game={next_game_id}")
+    else:
+        initial_data = {'game': request.GET.get('game')}
+        if not initial_data['game']:
+            last_fast_line = FastLine.objects.order_by('-game__id').first()
+            if last_fast_line:
+                num_lines_for_game = FastLine.objects.filter(game=last_fast_line.game).count()
+                if num_lines_for_game < 2:
+                    initial_data['game'] = last_fast_line.game.id
+                else:
+                    next_game = Game.objects.filter(id__gt=last_fast_line.game.id).order_by('id').first()
+                    initial_data['game'] = next_game.id if next_game else last_fast_line.game.id + 1
+            else:
+                first_game = Game.objects.order_by('id').first()
+                if first_game:
+                    initial_data['game'] = first_game.id
+
+        form = FastLineForm(initial=initial_data)
+
+    return render(request, 'archives/add_fast_line.html', {'form': form})
+
+
+@login_required
+@permission_required('archives.add_game', raise_exception=True)
+def add_final_line_view(request):
+    return render(request, 'archives/add_final_line.html')
+
+
+@login_required
+@permission_required('archives.add_game', raise_exception=True)
+def manage_leaderboards_view(request):
+    return render(request, 'archives/manage_leaderboards.html')
 
 
 # API Endpoint

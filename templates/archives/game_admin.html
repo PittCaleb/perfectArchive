@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Admin - Perfect Line Archives{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4">
+    <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Game Administration</h1>
+        <p class="text-md md:text-lg text-gray-400 mt-2">Tools for managing game data.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Score a Game -->
+        <a href="{% url 'score_game' %}" class="block bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-yellow-400 hover:bg-gray-700/50 transition-colors">
+            <h3 class="text-xl font-bold text-white mb-2">Score a Game</h3>
+            <p class="text-sm text-gray-400">Enter the results and scores for a completed episode.</p>
+        </a>
+        <!-- Add Prelim Line -->
+        <a href="{% url 'add_line' %}" class="block bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-yellow-400 hover:bg-gray-700/50 transition-colors">
+            <h3 class="text-xl font-bold text-white mb-2">Add Prelim Line</h3>
+            <p class="text-sm text-gray-400">Enter the details for a preliminary round line.</p>
+        </a>
+        <!-- Add Fast Line -->
+        <a href="{% url 'add_fast_line' %}" class="block bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-yellow-400 hover:bg-gray-700/50 transition-colors">
+            <h3 class="text-xl font-bold text-white mb-2">Add Fast Line</h3>
+            <p class="text-sm text-gray-400">Enter the details for a Fast Line round.</p>
+        </a>
+        <!-- Add Final Line -->
+        <a href="{% url 'add_final_line' %}" class="block bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-yellow-400 hover:bg-gray-700/50 transition-colors">
+            <h3 class="text-xl font-bold text-white mb-2">Add Final Line</h3>
+            <p class="text-sm text-gray-400">Enter the details for a Final Line round.</p>
+        </a>
+        <!-- Manage Leaderboards -->
+        <a href="{% url 'manage_leaderboards' %}" class="block bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-yellow-400 hover:bg-gray-700/50 transition-colors">
+            <h3 class="text-xl font-bold text-white mb-2">Manage Leaderboards</h3>
+            <p class="text-sm text-gray-400">View and manage gameplay leaderboard entries.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

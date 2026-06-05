@@ -11,3 +11,11 @@ def get_item(form, field_name):
     """
     return form[field_name]
 
+@register.filter(name='split')
+def split(value, key):
+    """
+    Returns the value turned into a list.
+    Usage: for i in "1,2,3"|split:","
+    """
+    return value.split(key)
+
